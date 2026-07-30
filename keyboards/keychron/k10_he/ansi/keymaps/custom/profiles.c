@@ -1,9 +1,9 @@
 #include QMK_KEYBOARD_H
 
-#include "profiles.h"
 #include "analog_matrix/profile.h"
 // #include "analog_matrix/game_controller_common.h"
 #include "analog_matrix/xinput_keycodes.h"
+#include "profiles.h"
 
 // #ifdef JOYSTICK_ENABLE
 // #    include "joystick.h"
