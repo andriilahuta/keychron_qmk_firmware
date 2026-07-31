@@ -1,21 +1,13 @@
 #include QMK_KEYBOARD_H
 
 #include "analog_matrix/profile.h"
-// #include "analog_matrix/game_controller_common.h"
 #include "analog_matrix/xinput_keycodes.h"
 #include "profiles.h"
-
-// #ifdef JOYSTICK_ENABLE
-// #    include "joystick.h"
-// // External function prototypes provided by Keychron's action_joystic.c
-// extern bool joystick_update(analog_key_t *key);
-// extern void joystick_clear(void);
-// #endif
 
 enum custom_profiles {
     PROFILE_TYPING = 0,
     PROFILE_GAMING = 1,
-    PROFILE_GAMING_JOYSTICK = 2
+    PROFILE_GAMING_JOYSTICK = 2,
 };
 
 uint8_t profile_gobal_mode[PROFILE_COUNT] = {
@@ -56,40 +48,13 @@ const uint16_t PROGMEM default_profiles[PROFILE_COUNT][MATRIX_ROWS][MATRIX_COLS]
 // This flag ensures the key doesn't continuously fire while held in the shallow zone.
 static bool shallow_fired[MATRIX_ROWS][MATRIX_COLS] = {false};
 
-// Prototype for Keychron's original driver function supplied by the linker
-extern bool __real_profile_select(uint8_t prof_idx, bool indication);
-
-// ==========================================================================
-// GCC LINKER WRAPPER: Intercepts profile_select()
-// ==========================================================================
-bool __wrap_profile_select(uint8_t prof_idx, bool indication) {
-    // 1. Execute Keychron's original profile_select() function in profile.c
-    bool success = __real_profile_select(prof_idx, indication);
-
-    // 2. If profile switch was valid and state changed, trigger custom callback
-    if (success) {
-        // Callback: Switch RGB Matrix mode to profile default
-        apply_rgb_profile(prof_idx);
-
-        // Callback: Reset analog states if switching away from Gaming profile
-//         if (prof_idx != PROFILE_GAMING) {
-// #ifdef JOYSTICK_ENABLE
-//             joystick_clear();
-// #endif
-//         }
-    }
-
-    return success;
-}
-
 bool process_record_profiles(uint16_t keycode, keyrecord_t *record) {
     uint8_t row = record->event.key.row;
     uint8_t col = record->event.key.col;
     uint8_t current_profile = profile_get_current_index();
 
     if (current_profile == PROFILE_GAMING || current_profile == PROFILE_GAMING_JOYSTICK) {
-
-        // 1. Swap Left GUI (Win/Cmd) -> Right Control
+        // swap Left GUI (Win/Cmd) -> Right Control
         if (keycode == KC_LGUI) {
             if (record->event.pressed) {
                 register_code16(KC_RCTL);
@@ -98,11 +63,6 @@ bool process_record_profiles(uint16_t keycode, keyrecord_t *record) {
             }
             return false;
         }
-
-        // // 2. Suppress digital keystrokes for numpad arrows so they only output analog axes
-        // if (keycode == KC_P8 || keycode == KC_P2 || keycode == KC_P4 || keycode == KC_P6) {
-        //     return false;
-        // }
     }
 
     // 2. GUI-Driven Analog Single-Fire Engine on the Typing Profile
@@ -184,38 +144,3 @@ void apply_rgb_profile(uint8_t profile) {
     }
 #endif
 }
-
-// void update_joystick(void) {
-// #ifdef JOYSTICK_ENABLE
-//     static bool cleared = false;
-
-//     // Reset all axes and buttons instantly when leaving Gaming Profile
-//     if (profile_get_current_index() != PROFILE_GAMING) {
-//         if (!cleared) {
-//             joystick_clear();
-//             cleared = true;
-//         }
-//         return;
-//     }
-
-//     cleared = false;
-
-//     analog_key_t key = {0};
-
-//     key.js_axis = GC_X_AXIS_LEFT;
-//     key.travel  = analog_matrix_get_travel(NUMPAD_LEFT_ROW, NUMPAD_LEFT_COL);
-//     joystick_update(&key);
-
-//     key.js_axis = GC_X_AXIS_RIGHT;
-//     key.travel  = analog_matrix_get_travel(NUMPAD_RIGHT_ROW, NUMPAD_RIGHT_COL);
-//     joystick_update(&key);
-
-//     key.js_axis = GC_Y_AXIS_UP;
-//     key.travel  = analog_matrix_get_travel(NUMPAD_UP_ROW, NUMPAD_UP_COL);
-//     joystick_update(&key);
-
-//     key.js_axis = GC_Y_AXIS_DOWN;
-//     key.travel  = analog_matrix_get_travel(NUMPAD_DOWN_ROW, NUMPAD_DOWN_COL);
-//     joystick_update(&key);
-// #endif
-// }

@@ -6,8 +6,6 @@
 #include "profiles.h"
 #include "leds.h"
 
-#define POWER_ON_LED_DURATION 3100
-
 // clang-format off
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [WIN_BASE] = LAYOUT_104_ansi(
@@ -67,104 +65,38 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_LCTL,  KC_LALT,  KC_LGUI,                    KC_SPC,                                   KC_RGUI,  KC_RALT,  MO(WIN_FM), KC_RCTL,  MI_TRSD,  MI_OCTD,  MI_TRSU,  MI_AOFF,  _______          ),
 };
 
+#define POWER_ON_LED_DURATION 3100
+#define POWER_ON_RGB_DURATION 4500
+
 static uint32_t power_on_indicator_timer;
+static uint32_t select_profile_indicator_timer;
 
 void keyboard_post_init_user(void) {
     power_on_indicator_timer = timer_read32();
-    // status_leds_init();
-    // status_leds_update();
-    // apply_rgb_profile(profile_get_current_index());
 }
 
 void housekeeping_task_user(void) {
-    if (power_on_indicator_timer) {
-        if (timer_elapsed32(power_on_indicator_timer) > POWER_ON_LED_DURATION) {
-            power_on_indicator_timer = 0;
-            layer_state_t default_layer = eeconfig_read_default_layer();
-            update_mac_led(default_layer);
-            update_win_led(default_layer);
-        }
+    if (power_on_indicator_timer && timer_elapsed32(power_on_indicator_timer) > POWER_ON_LED_DURATION) {
+        power_on_indicator_timer = 0;
+        layer_state_t default_layer = eeconfig_read_default_layer();
+        update_mac_led(default_layer);
+        update_win_led(default_layer);
+        apply_rgb_profile(profile_get_current_index());
     }
 
-
-    // static uint32_t boot_timer = 0;
-    // static bool sync_done = false;
-
-    // if (!sync_done) {
-    //     if (boot_timer == 0) {
-    //         boot_timer = timer_read32();
-    //     } else if (timer_elapsed32(boot_timer) > 3100) {
-    //         // Re-assert correct layer from EEPROM using the persistence API
-    //         set_single_persistent_default_layer(g_saved_os_layer);
-
-    //         // Sync custom LEDs to match software state
-    //         update_custom_os_leds(g_saved_os_layer);
-    //         sync_done = true;
-    //     }
-    // }
+    // apply profile's RGB effect after profile switch indication completes
+    if (select_profile_indicator_timer && timer_elapsed32(select_profile_indicator_timer) > POWER_ON_RGB_DURATION) {
+        select_profile_indicator_timer = 0;
+        apply_rgb_profile(profile_get_current_index());
+    }
 }
 
-// // Update status LEDs reactively when default layer changes (Mac/Win hardware switch)
-// layer_state_t default_layer_state_set_user(layer_state_t state) {
-//     status_leds_update();
-//     return state;
-// }
-
-// // Update status LEDs reactively when active layer state changes
-// layer_state_t layer_state_set_user(layer_state_t state) {
-//     status_leds_update();
-//     return state;
-// }
-
-// void matrix_scan_user(void) {
-//     static uint8_t last_profile_index = 255;
-//     uint8_t current = profile_get_current_index();
-//     if (last_profile_index == 255) {
-//         last_profile_index = current;
-//     }
-
-//     // 1. Detect profile transitions (from key shortcuts, web launcher, or boot)
-//     if (current != last_profile_index) {
-//         last_profile_index = current;
-//         apply_rgb_profile(current);
-//     }
-
-//     // 2. Poll continuous analog matrix values and update gamepad axes during Gaming Profile
-//     // update_joystick();
-// }
-
-// =============================================================================
-// 5. AUTOMATIC LED STATE HOOK
-// =============================================================================
 layer_state_t default_layer_state_set_user(layer_state_t state) {
     update_mac_led(state);
     update_win_led(state);
     return state;
 }
 
-// layer_state_t layer_state_set_user(layer_state_t state) {
-//     update_os_leds(state, eeconfig_read_default_layer());
-//     return state;
-// }
-
-// =============================================================================
-// 6. MAIN SCAN LOOP & 3100ms BOOT-SYNC PATCH
-// =============================================================================
-// void matrix_scan_user(void) {
-//     static bool boot_leds_synced = false;
-
-//     // Keychron reads B14 directly at 3000ms and overwrites LEDs during boot.
-//     // We wait until 3100ms, then force sync LEDs to reflect our software state.
-//     if (!boot_leds_synced && timer_read32() > 3100) {
-//         update_os_leds(default_layer_state, eeconfig_read_default_layer());
-//         boot_leds_synced = true;
-//     }
-
-//     // Process gamepad joystick axes for numpad cluster
-//     // update_gaming_numpad_analog_axes();
-// }
-
-// Make sure to keep FN Lock even after reset
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     if (!process_record_profiles(keycode, record)) {
         return false;
@@ -172,47 +104,14 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
     switch (keycode) {
         case OS_TOGGL:
-            // Do nothing when default layer is MIDI
+            // do nothing when default layer is MIDI
             if (get_highest_layer(default_layer_state) == MIDI) {
                 return false;
             }
-            // Allow normal processing for non-MIDI layers
+            // allow normal processing for non-MIDI layers
             return true;
-/* ---------------------------------------------------------------------
-         * OS_TOGGLE: Requires 3-key chord: Fn (Layer) + GUI (Win/Cmd) + OS_TOGGLE
-         * ------------------------------------------------------------------ */
-        // case OS_TOGGLE:
-        //     if (record->event.pressed) {
-        //         uint8_t current_mods = get_mods() | get_oneshot_mods();
 
-        //         // 1. Verify that the Win / Cmd key is physically held down alongside Fn
-        //         if (current_mods & MOD_MASK_GUI) {
-
-        //             // 2. Clear GUI modifiers immediately so releasing the physical
-        //             // key does not trigger Windows Start Menu or macOS Spotlight
-        //             clear_mods();
-        //             clear_oneshot_mods();
-
-        //             uint8_t current_os = get_highest_layer(default_layer_state);
-        //             if (current_os == MIDI) {
-        //                 current_os = get_highest_layer(eeconfig_read_default_layer());
-        //             }
-
-        //             uint8_t next_os = (current_os == MAC_BASE) ? WIN_BASE : MAC_BASE;
-
-        //             if (get_highest_layer(default_layer_state) != MIDI) {
-        //                 set_single_persistent_default_layer(next_os);
-        //             } else {
-        //                 // Refresh LEDs manually if MIDI layer is overriding default_layer_state
-        //                 update_os_leds(default_layer_state, eeconfig_read_default_layer());
-        //             }
-        //         }
-        //     }
-        //     return false;
-
-        /* ---------------------------------------------------------------------
-         * FN_LOCK: Toggles Windows F-row behavior between standard and media keys
-         * ------------------------------------------------------------------ */
+        // toggle F-row behavior between standard and media keys
         case FN_LOCK:
             if (record->event.pressed) {
                 uint8_t default_layer = get_highest_layer(default_layer_state);
@@ -237,11 +136,24 @@ bool __wrap_dip_switch_update_kb(uint8_t index, bool active) {
         if (active) {
             set_single_default_layer(MIDI);
         } else {
-            // Restore OS base layer from EEPROM
+            // restore OS base layer from EEPROM
             default_layer_set(eeconfig_read_default_layer());
         }
     }
 
     dip_switch_update_user(index, active);
     return true;
+}
+
+extern bool __real_profile_select(uint8_t prof_idx, bool indication);
+
+bool __wrap_profile_select(uint8_t prof_idx, bool indication) {
+    bool success = __real_profile_select(prof_idx, indication);
+
+    // if profile switch was valid, start timer to apply RGB effect after indication completes (~4s)
+    if (success) {
+        select_profile_indicator_timer = timer_read32();
+    }
+
+    return success;
 }

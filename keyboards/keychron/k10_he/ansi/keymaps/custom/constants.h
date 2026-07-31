@@ -22,7 +22,6 @@ enum layers {
 
 enum custom_keycodes {
     FN_LOCK = NEW_SAFE_RANGE,
-    // OS_TOGGLE
 };
 
 enum tap_dances {
