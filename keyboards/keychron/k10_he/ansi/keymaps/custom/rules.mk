@@ -8,6 +8,7 @@ JOYSTICK_ENABLE = yes
 MIDI_ENABLE = yes
 
 SRC += profiles.c \
+         common.c \
          leds.c
 
 LDFLAGS += -Wl,--wrap=profile_select \
