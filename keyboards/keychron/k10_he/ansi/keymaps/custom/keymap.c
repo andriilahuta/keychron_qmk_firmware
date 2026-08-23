@@ -100,6 +100,9 @@ void housekeeping_task_user(void) {
         select_profile_indicator_timer = 0;
         reset_rgb_profile();
     }
+
+    // check and trigger inactivity-based RGB effect
+    check_rgb_inactivity();
 }
 
 layer_state_t default_layer_state_set_user(layer_state_t state) {
@@ -109,6 +112,9 @@ layer_state_t default_layer_state_set_user(layer_state_t state) {
 }
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+    // reset inactivity RGB cycle on any key activity
+    reset_rgb_inactivity(true);
+
     if (!process_record_profiles(keycode, record)) {
         return false;
     }

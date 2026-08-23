@@ -1,7 +1,14 @@
 #include QMK_KEYBOARD_H
 
 #include "analog_matrix/xinput_keycodes.h"
+#include "constants.h"
 #include "profiles.h"
+
+#define DEFAULT_DEEP_PRESS_THRESHOLD 32
+#define GAMING_LGUI_MAP_TO KC_LALT
+
+#define INACTIVITY_RGB_EFFECT RGB_MATRIX_CYCLE_LEFT_RIGHT
+#define INACTIVITY_TIMEOUT_MS 600000  // 10 minutes
 
 enum custom_profiles {
     PROFILE_TYPING = 0,
@@ -73,36 +80,34 @@ bool process_record_analog_typing(uint8_t current_profile, uint16_t keycode, key
     uint8_t threshold_deep = (key_cfg.mode == AKM_GLOBAL)
                               ? cur_prof->global.rpd_trig_sen
                               : key_cfg.rpd_trig_sen;
-
     // safeguard: if deep threshold is unassigned, default to safe deep travel (~3.2mm)
     if (threshold_deep == 0) {
-        threshold_deep = 32;
+        threshold_deep = DEFAULT_DEEP_PRESS_THRESHOLD;
     }
 
     if (record->event.pressed) {
-        // STAGE 2: Deep Press
-        // If switch travels past deep threshold, yield control back to QMK standard engine.
+        // if switch travels past deep threshold, yield control back to QMK standard engine
         if (current_depth >= threshold_deep) {
             return true;
         }
 
-        // STAGE 1: Shallow Press
-        // Fire single tap and set lock state to prevent repeating while hovering.
+        // shallow press
+        // fire single tap and set lock state to prevent repeating while hovering
         if (!shallow_fired[row][col] && current_depth >= threshold_shallow) {
             register_code16(keycode);
-            unregister_code16(keycode); // Immediate unregister prevents OS hold-repeat
+            unregister_code16(keycode); // immediate unregister prevents OS hold-repeat
 
             shallow_fired[row][col] = true;
             return false;
         }
 
-        // HOVER / SUSPENDED STATE
-        // Suppress output while finger sits resting between shallow and deep thresholds.
+        // hover state
+        // suppress repeated output after shallow tap while finger remains pressed
         if (shallow_fired[row][col]) {
             return false;
         }
     } else {
-        // Key Release Event: Reset shallow lock state for next actuation cycle.
+        // key released: reset shallow lock state for next actuation cycle
         shallow_fired[row][col] = false;
         return true;
     }
@@ -121,9 +126,9 @@ bool process_record_profiles(uint16_t keycode, keyrecord_t *record) {
         case KC_LGUI:
             if (current_profile == PROFILE_GAMING || current_profile == PROFILE_GAMING_JOYSTICK) {
                 if (record->event.pressed) {
-                    register_code16(KC_RCTL);
+                    register_code16(GAMING_LGUI_MAP_TO);
                 } else {
-                    unregister_code16(KC_RCTL);
+                    unregister_code16(GAMING_LGUI_MAP_TO);
                 }
                 return false;
             }
@@ -138,15 +143,63 @@ bool process_record_profiles(uint16_t keycode, keyrecord_t *record) {
 
 void apply_rgb_profile(uint8_t profile) {
 #ifdef RGB_MATRIX_ENABLE
+    // MIDI layer always uses MIDI effect regardless of profile
+    if (get_highest_layer(layer_state) == MIDI) {
+        rgb_matrix_mode(RGB_MATRIX_CUSTOM_PROFILE_MIDI);
+        return;
+    }
+
     switch (profile) {
         case PROFILE_GAMING:
         case PROFILE_GAMING_JOYSTICK:
-            rgb_matrix_mode(RGB_MATRIX_CUSTOM_PROFILE_GAMING_ZONES);
+            rgb_matrix_mode(RGB_MATRIX_CUSTOM_PROFILE_GAMING);
             break;
         case PROFILE_TYPING:
         default:
-            rgb_matrix_mode(RGB_MATRIX_CUSTOM_PROFILE_ALPHA_VISUALIZER);
+            rgb_matrix_mode(RGB_MATRIX_CUSTOM_PROFILE_TYPING);
             break;
+    }
+#endif
+}
+
+// Inactivity RGB state tracking
+static uint32_t inactivity_timer = 0;
+static bool inactivity_cycle_active = false;
+static uint8_t inactivity_saved_rgb_mode = 0;
+
+// Trigger inactivity-based RGB effect after timeout
+void check_rgb_inactivity(void) {
+#ifdef RGB_MATRIX_ENABLE
+    if (inactivity_cycle_active) {
+        return;
+    }
+
+    // initialize inactivity timer
+    if (inactivity_timer == 0) {
+        inactivity_timer = timer_read32();
+        return;
+    }
+
+    // check if enough time has passed since last activity
+    if (timer_elapsed32(inactivity_timer) >= INACTIVITY_TIMEOUT_MS) {
+        // save current RGB mode and switch to configured inactivity effect
+        inactivity_saved_rgb_mode = rgb_matrix_get_mode();
+        rgb_matrix_mode(INACTIVITY_RGB_EFFECT);
+        inactivity_cycle_active = true;
+    }
+#endif
+}
+
+// reset inactivity state, optionally restoring the previous RGB effect
+void reset_rgb_inactivity(bool restore_effect) {
+#ifdef RGB_MATRIX_ENABLE
+    inactivity_timer = 0;
+    inactivity_cycle_active = false;
+
+    // restore the saved effect if requested and we have a saved mode
+    if (restore_effect && inactivity_saved_rgb_mode != 0) {
+        rgb_matrix_mode(inactivity_saved_rgb_mode);
+        inactivity_saved_rgb_mode = 0;
     }
 #endif
 }
