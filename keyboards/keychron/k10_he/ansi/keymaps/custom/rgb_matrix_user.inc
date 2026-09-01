@@ -2,9 +2,11 @@
 // QMK automatically creates enum values:
 //   - RGB_MATRIX_CUSTOM_PROFILE_TYPING
 //   - RGB_MATRIX_CUSTOM_PROFILE_GAMING
+//   - RGB_MATRIX_CUSTOM_PROFILE_GAMING_JOYSTICK
 //   - RGB_MATRIX_CUSTOM_PROFILE_MIDI
 RGB_MATRIX_EFFECT(PROFILE_TYPING)
 RGB_MATRIX_EFFECT(PROFILE_GAMING)
+RGB_MATRIX_EFFECT(PROFILE_GAMING_JOYSTICK)
 RGB_MATRIX_EFFECT(PROFILE_MIDI)
 
 #ifdef RGB_MATRIX_CUSTOM_EFFECT_IMPLS
@@ -30,6 +32,7 @@ static const rgb_color_t GAMING_COLOR_BACKGROUND = { 255, 255, 0 };
 static const rgb_color_t GAMING_COLOR_PRIMARY = { 255, 0, 0 };
 static const rgb_color_t GAMING_COLOR_SECONDARY = { 0, 255, 255 };
 static const rgb_color_t GAMING_COLOR_ACCENT = { 238, 130, 238 };
+static const rgb_color_t JOYSTICK_HIGHLIGHT_COLOR = { 0, 255, 255 }; // cyan
 
 #define KEY(row, col)  { (row), (col) }
 #define KEY_GROUP(color, ...) \
@@ -78,6 +81,67 @@ static const key_group_info gaming_groups[] = {
     }),
 };
 
+// Apply the full gaming palette (background + key groups)
+static inline void apply_gaming_palette(uint8_t led_min, uint8_t led_max) {
+    // set background
+    for (uint8_t i = led_min; i < led_max; i++) {
+        rgb_matrix_set_color(i, GAMING_COLOR_BACKGROUND.r, GAMING_COLOR_BACKGROUND.g, GAMING_COLOR_BACKGROUND.b);
+    }
+
+    // set key groups
+    for (size_t g = 0; g < ARRAY_SIZE(gaming_groups); g++) {
+        const rgb_color_t* c = &gaming_groups[g].color;
+        for (size_t j = 0; j < gaming_groups[g].key_count; j++) {
+            uint8_t led_i;
+            if (rgb_matrix_map_row_column_to_led(
+                    gaming_groups[g].keys[j].row,
+                    gaming_groups[g].keys[j].col, &led_i) > 0) {
+                rgb_matrix_set_color(led_i, c->r, c->g, c->b);
+            }
+        }
+    }
+}
+
+
+static bool PROFILE_GAMING(effect_params_t* params) {
+    RGB_MATRIX_USE_LIMITS(led_min, led_max);
+    apply_gaming_palette(led_min, led_max);
+    return rgb_matrix_check_finished_leds(led_max);
+}
+
+static bool PROFILE_GAMING_JOYSTICK(effect_params_t* params) {
+    RGB_MATRIX_USE_LIMITS(led_min, led_max);
+
+    static uint8_t joystick_leds_cache[MATRIX_ROWS * MATRIX_COLS];
+    static uint8_t joystick_leds_count = 0;
+    static bool joystick_leds_scanned = false;
+
+    if (!joystick_leds_scanned) {
+        for (uint8_t row = 0; row < MATRIX_ROWS; row++) {
+            for (uint8_t col = 0; col < MATRIX_COLS; col++) {
+                uint16_t kc = pgm_read_word(&default_profiles[PROFILE_GAMING_JOYSTICK][row][col]);
+                if (kc != 0) {
+                    uint8_t led_i;
+                    if (rgb_matrix_map_row_column_to_led(row, col, &led_i) > 0) {
+                        joystick_leds_cache[joystick_leds_count++] = led_i;
+                    }
+                }
+            }
+        }
+        joystick_leds_scanned = true;
+    }
+
+    apply_gaming_palette(led_min, led_max);
+
+    // apply cached joystick highlights
+    for (uint8_t i = 0; i < joystick_leds_count; i++) {
+        rgb_matrix_set_color(joystick_leds_cache[i], JOYSTICK_HIGHLIGHT_COLOR.r, JOYSTICK_HIGHLIGHT_COLOR.g, JOYSTICK_HIGHLIGHT_COLOR.b);
+    }
+
+    return rgb_matrix_check_finished_leds(led_max);
+}
+
+
 static bool PROFILE_TYPING(effect_params_t* params) {
     RGB_MATRIX_USE_LIMITS(led_min, led_max);
 
@@ -107,29 +171,6 @@ static bool PROFILE_TYPING(effect_params_t* params) {
     return rgb_matrix_check_finished_leds(led_max);
 }
 
-static bool PROFILE_GAMING(effect_params_t* params) {
-    RGB_MATRIX_USE_LIMITS(led_min, led_max);
-
-    // set background
-    for (uint8_t i = led_min; i < led_max; i++) {
-        rgb_matrix_set_color(i, GAMING_COLOR_BACKGROUND.r, GAMING_COLOR_BACKGROUND.g, GAMING_COLOR_BACKGROUND.b);
-    }
-
-    // set key groups
-    for (size_t g = 0; g < ARRAY_SIZE(gaming_groups); g++) {
-        const rgb_color_t* rgb = &gaming_groups[g].color;
-        for (size_t j = 0; j < gaming_groups[g].key_count; j++) {
-            uint8_t led_i;
-            if (rgb_matrix_map_row_column_to_led(
-                    gaming_groups[g].keys[j].row,
-                    gaming_groups[g].keys[j].col, &led_i) > 0) {
-                rgb_matrix_set_color(led_i, rgb->r, rgb->g, rgb->b);
-            }
-        }
-    }
-
-    return rgb_matrix_check_finished_leds(led_max);
-}
 
 static bool PROFILE_MIDI(effect_params_t* params) {
     RGB_MATRIX_USE_LIMITS(led_min, led_max);
@@ -146,7 +187,7 @@ static bool PROFILE_MIDI(effect_params_t* params) {
         RGB rgb = hsv_to_rgb((HSV){hue, 200, brightness});
         rgb_matrix_set_color(i, rgb.r, rgb.g, rgb.b);
     }
-    
+
     return rgb_matrix_check_finished_leds(led_max);
 }
 

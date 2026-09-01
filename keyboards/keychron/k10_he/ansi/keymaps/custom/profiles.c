@@ -151,8 +151,10 @@ void apply_rgb_profile(uint8_t profile) {
 
     switch (profile) {
         case PROFILE_GAMING:
-        case PROFILE_GAMING_JOYSTICK:
             rgb_matrix_mode(RGB_MATRIX_CUSTOM_PROFILE_GAMING);
+            break;
+        case PROFILE_GAMING_JOYSTICK:
+            rgb_matrix_mode(RGB_MATRIX_CUSTOM_PROFILE_GAMING_JOYSTICK);
             break;
         case PROFILE_TYPING:
         default:
