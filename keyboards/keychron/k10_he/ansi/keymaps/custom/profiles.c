@@ -1,20 +1,12 @@
 #include QMK_KEYBOARD_H
 
 #include "analog_matrix/xinput_keycodes.h"
+#include "analog_matrix/profile.h"
 #include "constants.h"
 #include "profiles.h"
 
 #define DEFAULT_DEEP_PRESS_THRESHOLD 32
 #define GAMING_LGUI_MAP_TO KC_LALT
-
-#define INACTIVITY_RGB_EFFECT RGB_MATRIX_CYCLE_LEFT_RIGHT
-#define INACTIVITY_TIMEOUT_MS 600000  // 10 minutes
-
-enum custom_profiles {
-    PROFILE_TYPING = 0,
-    PROFILE_GAMING = 1,
-    PROFILE_GAMING_JOYSTICK = 2,
-};
 
 uint8_t profile_gobal_mode[PROFILE_COUNT] = {
     [PROFILE_TYPING] = AKM_REGULAR,
@@ -139,69 +131,4 @@ bool process_record_profiles(uint16_t keycode, keyrecord_t *record) {
     }
 
     return true;
-}
-
-void apply_rgb_profile(uint8_t profile) {
-#ifdef RGB_MATRIX_ENABLE
-    // MIDI layer always uses MIDI effect regardless of profile
-    if (get_highest_layer(layer_state) == MIDI) {
-        rgb_matrix_mode(RGB_MATRIX_CUSTOM_PROFILE_MIDI);
-        return;
-    }
-
-    switch (profile) {
-        case PROFILE_GAMING:
-            rgb_matrix_mode(RGB_MATRIX_CUSTOM_PROFILE_GAMING);
-            break;
-        case PROFILE_GAMING_JOYSTICK:
-            rgb_matrix_mode(RGB_MATRIX_CUSTOM_PROFILE_GAMING_JOYSTICK);
-            break;
-        case PROFILE_TYPING:
-        default:
-            rgb_matrix_mode(RGB_MATRIX_CUSTOM_PROFILE_TYPING);
-            break;
-    }
-#endif
-}
-
-// Inactivity RGB state tracking
-static uint32_t inactivity_timer = 0;
-static bool inactivity_cycle_active = false;
-static uint8_t inactivity_saved_rgb_mode = 0;
-
-// Trigger inactivity-based RGB effect after timeout
-void check_rgb_inactivity(void) {
-#ifdef RGB_MATRIX_ENABLE
-    if (inactivity_cycle_active) {
-        return;
-    }
-
-    // initialize inactivity timer
-    if (inactivity_timer == 0) {
-        inactivity_timer = timer_read32();
-        return;
-    }
-
-    // check if enough time has passed since last activity
-    if (timer_elapsed32(inactivity_timer) >= INACTIVITY_TIMEOUT_MS) {
-        // save current RGB mode and switch to configured inactivity effect
-        inactivity_saved_rgb_mode = rgb_matrix_get_mode();
-        rgb_matrix_mode(INACTIVITY_RGB_EFFECT);
-        inactivity_cycle_active = true;
-    }
-#endif
-}
-
-// reset inactivity state, optionally restoring the previous RGB effect
-void reset_rgb_inactivity(bool restore_effect) {
-#ifdef RGB_MATRIX_ENABLE
-    inactivity_timer = 0;
-    inactivity_cycle_active = false;
-
-    // restore the saved effect if requested and we have a saved mode
-    if (restore_effect && inactivity_saved_rgb_mode != 0) {
-        rgb_matrix_mode(inactivity_saved_rgb_mode);
-        inactivity_saved_rgb_mode = 0;
-    }
-#endif
 }

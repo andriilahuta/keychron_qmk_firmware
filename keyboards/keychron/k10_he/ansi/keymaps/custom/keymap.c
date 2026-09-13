@@ -55,15 +55,18 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         UG_TOGG,  UG_NEXT,  UG_VALU,  UG_HUEU,  UG_SATU,  UG_SPDU,  _______,  _______,  _______,  _______,  _______,  KC_LBRC,  KC_RBRC,  _______,   _______,  _______,  _______,   _______,  MS_WHLU,  _______,  _______,
         QK_LOCK,  UG_PREV,  UG_VALD,  UG_HUED,  UG_SATD,  UG_SPDD,  _______,  _______,  _______,  _______,  KC_SCLN,  KC_QUOT,            _______,                                  MS_WHLL,  _______,  MS_WHLR,
         _______,            _______,  _______,  _______,  _______,  BAT_LVL,  _______,  _______,  _______,  _______,  KC_SLSH,            _______,             MS_UP,               _______,  MS_WHLD,  _______,  _______,
-        _______,  _______,  _______,                                BL_STEP,                                _______,  _______,  _______,  QK_LEAD,   MS_LEFT,  MS_DOWN,  MS_RGHT,   _______,              _______          ),
+        _______,  _______,  _______,                                BL_STEP,                                _______,  _______,  _______,  QK_LEAD,   MS_LEFT,  MS_DOWN,  MS_RGHT,   _______,              _______          )
+};
 
-    [MIDI] = LAYOUT_104_ansi(
-        KC_ESC,             MI_OCTD,  MI_OCTU,  MI_TRSD,  MI_TRSU,  MI_VELD,  MI_VELU,  MI_CHND,  MI_CHNU,  MI_SUST,  MI_MOD,   MI_BNDD,  MI_BNDU,  MI_AOFF,  _______,  TD(TD_UG_NEXT_RGB_RESET),
-        KC_GRV,   MI_Cs2,   MI_Ds2,   _______,  MI_Fs2,   MI_Gs2,   MI_As2,   _______,  MI_Cs3,   MI_Ds3,   _______,  MI_Fs3,   MI_Gs3,   KC_BSPC,  _______,  _______,  _______,  _______,  _______,  _______,  _______,
-        KC_TAB,   MI_C2,    MI_D2,    MI_E2,    MI_F2,    MI_G2,    MI_A2,    MI_B2,    MI_C3,    MI_D3,    MI_E3,    MI_F3,    _______,  KC_ENT,   _______,  _______,  _______,  MI_C2,    MI_D2,    MI_E2,    _______,
-        KC_CAPS,  MI_C3,    MI_D3,    MI_E3,    MI_F3,    MI_G3,    MI_A3,    MI_B3,    MI_C4,    MI_D4,    MI_E4,    MI_F4,    KC_QUOT,                    MI_F2,                                    MI_G2,    MI_A2,
-        KC_LSFT,            _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,  KC_RSFT,  MI_OCTU,  MI_C1,    MI_D1,    MI_E1,    _______,
-        KC_LCTL,  KC_LALT,  KC_LGUI,                                KC_SPC,                                 KC_RGUI,  KC_RALT,  MO(WIN_FM), KC_RCTL,  MI_TRSD,  MI_OCTD,  MI_TRSU,  MI_AOFF,  _______          ),
+tap_dance_action_t tap_dance_actions[] = {
+    [TD_UG_NEXT_RGB_RESET] = ACTION_TAP_DANCE_TAP_HOLD_FN(UG_NEXT, reset_rgb_profile),
+    [TD_SCLN_COLN] = ACTION_TAP_DANCE_DOUBLE(KC_SCLN, KC_COLN),
+    [TD_QUOT_DQUO] = ACTION_TAP_DANCE_DOUBLE(KC_QUOT, KC_DQUO),
+    [TD_LBRC_LCBR] = ACTION_TAP_DANCE_DOUBLE(KC_LBRC, KC_LCBR),
+    [TD_RBRC_RCBR] = ACTION_TAP_DANCE_DOUBLE(KC_RBRC, KC_RCBR),
+    [TD_NINE_LPAREN] = ACTION_TAP_DANCE_DOUBLE(KC_9, KC_LPRN),
+    [TD_ZERO_RPAREN] = ACTION_TAP_DANCE_DOUBLE(KC_0, KC_RPRN),
+    [TD_SLSH_QUES] = ACTION_TAP_DANCE_DOUBLE(KC_SLSH, KC_QUES),
 };
 
 #define POWER_ON_LED_DURATION 3100
@@ -71,6 +74,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
 static uint32_t power_on_indicator_timer;
 static uint32_t select_profile_indicator_timer;
+static bool keyboard_locked = false;
 
 uint16_t get_tapping_term(uint16_t keycode, keyrecord_t *record) {
     switch (keycode) {
@@ -94,10 +98,14 @@ void keyboard_post_init_user(void) {
 void housekeeping_task_user(void) {
     if (power_on_indicator_timer && timer_elapsed32(power_on_indicator_timer) > POWER_ON_LED_DURATION) {
         power_on_indicator_timer = 0;
-        layer_state_t default_layer = eeconfig_read_default_layer();
+        layer_state_t default_layer = get_highest_layer(default_layer_state);
         update_mac_led(default_layer);
         update_win_led(default_layer);
-        reset_rgb_profile();
+        if (!keyboard_locked) {
+            reset_rgb_profile();
+        } else {
+            rgb_matrix_mode(RGB_MATRIX_CUSTOM_KEYBOARD_LOCKED_EFFECT);
+        }
     }
 
     // apply profile's RGB effect after profile switch indication completes
@@ -106,8 +114,10 @@ void housekeeping_task_user(void) {
         reset_rgb_profile();
     }
 
-    // check and trigger inactivity-based RGB effect
-    check_rgb_inactivity();
+    if (!keyboard_locked) {
+        // check and trigger inactivity-based RGB effect
+        check_rgb_inactivity();
+    }
 }
 
 layer_state_t default_layer_state_set_user(layer_state_t state) {
@@ -116,7 +126,53 @@ layer_state_t default_layer_state_set_user(layer_state_t state) {
     return state;
 }
 
+void leader_end_user(void) {
+    if (leader_sequence_two_keys(KC_A, KC_A)) {
+        // a, a => Ctrl+A, Ctrl+C
+        SEND_STRING(SS_LCTL("a") SS_LCTL("c"));
+    }
+
+    // --- Quotes (Double Tap) ---
+    else if (leader_sequence_two_keys(KC_QUOTE, KC_QUOTE)) {
+        // ' ' => '' and place cursor inside
+        SEND_STRING("''" SS_TAP(X_LEFT));
+    }
+    else if (leader_sequence_two_keys(KC_DQUO, KC_DQUO)) {
+        // " " => "" and place cursor inside
+        SEND_STRING("\"\"" SS_TAP(X_LEFT));
+    }
+
+    // --- Symmetrical Brackets ---
+    else if (leader_sequence_two_keys(KC_LPRN, KC_LPRN)) {
+        // ( ( => () and place cursor inside
+        SEND_STRING("()" SS_TAP(X_LEFT));
+    }
+    else if (leader_sequence_two_keys(KC_LBRC, KC_LBRC)) {
+        // [ [ => [] and place cursor inside
+        SEND_STRING("[]" SS_TAP(X_LEFT));
+    }
+    else if (leader_sequence_two_keys(KC_LCBR, KC_LCBR)) {
+        // { { => {} and place cursor inside
+        SEND_STRING("{}" SS_TAP(X_LEFT));
+    }
+    else if (leader_sequence_two_keys(KC_LABK, KC_LABK)) {
+        // < < => <> and place cursor inside
+        SEND_STRING("<>" SS_TAP(X_LEFT));
+    }
+
+    // --- Markdown Code Block ---
+    else if (leader_sequence_two_keys(KC_GRAVE, KC_GRAVE)) {
+        // ` ` => Markdown triple backtick code block with cursor in center
+        SEND_STRING("```" SS_TAP(X_ENTER) SS_TAP(X_ENTER) "```" SS_TAP(X_UP));
+    }
+}
+
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+    // block ALL input when dip switch has locked the keyboard
+    if (keyboard_locked) {
+        return false;
+    }
+
     // reset inactivity RGB cycle on any key activity
     reset_rgb_inactivity(true);
 
@@ -125,14 +181,6 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     }
 
     switch (keycode) {
-        case OS_TOGGL:
-            // do nothing when default layer is MIDI
-            if (get_highest_layer(default_layer_state) == MIDI) {
-                return false;
-            }
-            // allow normal processing for non-MIDI layers
-            return true;
-
         // toggle F-row behavior between standard and media keys
         case FN_LOCK:
             if (record->event.pressed) {
@@ -156,10 +204,13 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 bool __wrap_dip_switch_update_kb(uint8_t index, bool active) {
     if (index == 0) {
         if (active) {
-            set_single_default_layer(MIDI);
+            // dip switch ON: lock keyboard completely
+            keyboard_locked = true;
+            if (!power_on_indicator_timer) rgb_matrix_mode(RGB_MATRIX_CUSTOM_KEYBOARD_LOCKED_EFFECT);
         } else {
-            // restore OS base layer from EEPROM
-            default_layer_set(eeconfig_read_default_layer());
+            // dip switch OFF: unlock and restore normal operation
+            keyboard_locked = false;
+            if (!power_on_indicator_timer) reset_rgb_profile(); // restore normal profile effect
         }
     }
 
