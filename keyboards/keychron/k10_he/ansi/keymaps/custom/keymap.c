@@ -59,7 +59,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 };
 
 tap_dance_action_t tap_dance_actions[] = {
-    [TD_UG_NEXT_RGB_RESET] = ACTION_TAP_DANCE_TAP_HOLD_FN(UG_NEXT, reset_rgb_profile),
+    [TD_UG_NEXT_RGB_RESET] = ACTION_TAP_DANCE_TAP_HOLD_FN(UG_NEXT, save_current_rgb_profile),
     [TD_SCLN_COLN] = ACTION_TAP_DANCE_DOUBLE(KC_SCLN, KC_COLN),
     [TD_QUOT_DQUO] = ACTION_TAP_DANCE_DOUBLE(KC_QUOT, KC_DQUO),
     [TD_LBRC_LCBR] = ACTION_TAP_DANCE_DOUBLE(KC_LBRC, KC_LCBR),
@@ -101,17 +101,16 @@ void housekeeping_task_user(void) {
         layer_state_t default_layer = get_highest_layer(default_layer_state);
         update_mac_led(default_layer);
         update_win_led(default_layer);
-        if (!keyboard_locked) {
-            reset_rgb_profile();
-        } else {
-            rgb_matrix_mode(RGB_MATRIX_CUSTOM_KEYBOARD_LOCKED_EFFECT);
+        if (keyboard_locked) {
+            store_rgb_mode(RGB_SAVE_SLOT_LOCK);
+            rgb_matrix_mode_noeeprom(RGB_MATRIX_CUSTOM_KEYBOARD_LOCKED_EFFECT);
         }
     }
 
     // apply profile's RGB effect after profile switch indication completes
     if (select_profile_indicator_timer && timer_elapsed32(select_profile_indicator_timer) > POWER_ON_RGB_DURATION) {
         select_profile_indicator_timer = 0;
-        reset_rgb_profile();
+        save_current_rgb_profile();
     }
 
     if (!keyboard_locked) {
@@ -206,11 +205,14 @@ bool __wrap_dip_switch_update_kb(uint8_t index, bool active) {
         if (active) {
             // dip switch ON: lock keyboard completely
             keyboard_locked = true;
-            if (!power_on_indicator_timer) rgb_matrix_mode(RGB_MATRIX_CUSTOM_KEYBOARD_LOCKED_EFFECT);
+            if (!power_on_indicator_timer) {
+                store_rgb_mode(RGB_SAVE_SLOT_LOCK);
+                rgb_matrix_mode_noeeprom(RGB_MATRIX_CUSTOM_KEYBOARD_LOCKED_EFFECT);
+            }
         } else {
             // dip switch OFF: unlock and restore normal operation
             keyboard_locked = false;
-            if (!power_on_indicator_timer) reset_rgb_profile(); // restore normal profile effect
+            if (!power_on_indicator_timer) restore_rgb_mode(RGB_SAVE_SLOT_LOCK); // restore normal RGB effect
         }
     }
 

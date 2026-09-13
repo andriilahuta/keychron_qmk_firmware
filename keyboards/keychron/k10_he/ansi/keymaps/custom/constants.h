@@ -25,7 +25,7 @@ enum custom_keycodes {
 };
 
 enum tap_dances {
-    TD_UG_NEXT_RGB_RESET,  // UG_NEXT on tap, reset_rgb_profile on hold
+    TD_UG_NEXT_RGB_RESET,  // UG_NEXT on tap, saves current RGB profile to EEPROM on hold
     TD_SCLN_COLN,  // semicolon on single tap, colon on double tap
     TD_QUOT_DQUO,  // single quote on single tap, double quote on double tap
     TD_LBRC_LCBR,  // [ single, { double
