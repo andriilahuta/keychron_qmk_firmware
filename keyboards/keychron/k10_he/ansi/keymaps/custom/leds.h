@@ -28,6 +28,3 @@ void store_rgb_mode(rgb_save_slot_t slot);
 
 void restore_rgb_mode(rgb_save_slot_t slot);
 
-void check_rgb_inactivity(void);
-
-void reset_rgb_inactivity(bool restore_effect);

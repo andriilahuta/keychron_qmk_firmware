@@ -6,19 +6,20 @@
 #include "common.h"
 #include "profiles.h"
 #include "leds.h"
+#include "inactivity.h"
 
 // clang-format off
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [WIN_BASE] = LAYOUT_104_ansi(
-        KC_ESC,             KC_F1,    KC_F2,    KC_F3,    KC_F4,    KC_F5,    KC_F6,    KC_F7,    KC_F8,    KC_F9,    KC_F10,   KC_F11,   KC_F12,    KC_PSCR,  KC_CTANA, TD(TD_UG_NEXT_RGB_RESET),
+        KC_ESC,             KC_F1,    KC_F2,    KC_F3,    KC_F4,    KC_F5,    KC_F6,    KC_F7,    KC_F8,    KC_F9,    KC_F10,   KC_F11,   KC_F12,   KC_PSCR,  KC_CTANA, TD(TD_UG_NEXT_RGB_RESET),
         KC_GRV,   KC_1,     KC_2,     KC_3,     KC_4,     KC_5,     KC_6,     KC_7,     KC_8,     TD(TD_NINE_LPAREN), TD(TD_ZERO_RPAREN), KC_MINS,  KC_EQL,   KC_BSPC,   KC_INS,   KC_HOME,  KC_PGUP,   KC_NUM,   KC_PSLS,  KC_PAST,  KC_PMNS,
-        KC_TAB,   KC_Q,     KC_W,     KC_E,     KC_R,     KC_T,     KC_Y,     KC_U,     KC_I,     KC_O,     KC_P,     TD(TD_LBRC_LCBR),   TD(TD_RBRC_RCBR),   KC_BSLS,   KC_DEL,   KC_END,   KC_PGDN,   KC_P7,    KC_P8,    KC_P9,    KC_PPLS,
+        KC_TAB,   KC_Q,     KC_W,     KC_E,     KC_R,     KC_T,     KC_Y,     KC_U,     KC_I,     KC_O,     KC_P,     TD(TD_LBRC_LCBR),   TD(TD_RBRC_RCBR),   TD(TD_BSLS_PIPE),   KC_DEL,   KC_END,   KC_PGDN,   KC_P7,    KC_P8,    KC_P9,    KC_PPLS,
         KC_CAPS,  KC_A,     KC_S,     KC_D,     KC_F,     KC_G,     KC_H,     KC_J,     KC_K,     KC_L,     TD(TD_SCLN_COLN),  TD(TD_QUOT_DQUO),            KC_ENT,                                   KC_P4,    KC_P5,    KC_P6,
         KC_LSFT,            KC_Z,     KC_X,     KC_C,     KC_V,     KC_B,     KC_N,     KC_M,     KC_COMM,  KC_DOT,   TD(TD_SLSH_QUES),           KC_RSFT,             KC_UP,               KC_P1,    KC_P2,    KC_P3,    KC_PENT,
         KC_LCTL,  KC_LWIN,  KC_LALT,                                KC_SPC,                                 KC_RALT,  KC_RWIN,  FN_WIN,   KC_RCTL,   KC_LEFT,  KC_DOWN,  KC_RGHT,   KC_P0,              KC_PDOT          ),
 
     [WIN_FN] = LAYOUT_104_ansi(
-        FN_LOCK,            KC_BRID,  KC_BRIU,  KC_TASK,  KC_FILE,  UG_VALD,  UG_VALU,  KC_MPRV,  KC_MPLY,  KC_MNXT,  KC_MUTE,  KC_VOLD,  KC_VOLU,   _______,  _______,  UG_TOGG,
+        FN_LOCK,            KC_BRID,  KC_BRIU,  KC_TASK,  KC_FILE,  UG_VALD,  UG_VALU,  KC_MPRV,  KC_MPLY,  KC_MNXT,  KC_MUTE,  KC_VOLD,  KC_VOLU,   KC_CALC,  KC_MYCM,  UG_TOGG,
         _______,  BT_HST1,  BT_HST2,  BT_HST3,  P2P4G,    _______,  _______,  _______,  _______,  KC_9,     KC_0,     _______,  _______,  _______,   _______,  _______,  _______,   _______,  _______,  OS_TOGGL,  _______,
         UG_TOGG,  UG_NEXT,  UG_VALU,  UG_HUEU,  UG_SATU,  UG_SPDU,  _______,  _______,  _______,  _______,  _______,  KC_LBRC,  KC_RBRC,  _______,   _______,  _______,  _______,   _______,  MS_WHLU,  _______,  _______,
         QK_LOCK,  UG_PREV,  UG_VALD,  UG_HUED,  UG_SATD,  UG_SPDD,  _______,  _______,  _______,  _______,  KC_SCLN,  KC_QUOT,            _______,                                  MS_WHLL,  _______,  MS_WHLR,
@@ -26,7 +27,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         _______,  _______,  _______,                                BL_STEP,                                _______,  _______,  _______,  QK_LEAD,   MS_LEFT,  MS_DOWN,  MS_RGHT,   _______,              _______          ),
 
     [WIN_FN_LOCK] = LAYOUT_104_ansi(
-        _______,            KC_BRID,  KC_BRIU,  KC_TASK,  KC_FILE,  UG_VALD,  UG_VALU,  KC_MPRV,  KC_MPLY,  KC_MNXT,  KC_MUTE,  KC_VOLD,  KC_VOLU,   _______,  _______,  UG_TOGG,
+        _______,            KC_BRID,  KC_BRIU,  KC_TASK,  KC_FILE,  UG_VALD,  UG_VALU,  KC_MPRV,  KC_MPLY,  KC_MNXT,  KC_MUTE,  KC_VOLD,  KC_VOLU,   KC_CALC,  KC_MYCM,  UG_TOGG,
         _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,   _______,  _______,  _______,   _______,  _______,  _______,  _______,
         _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,   _______,  _______,  _______,   _______,  _______,  _______,  _______,
         _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,            _______,                                  _______,  _______,  _______,
@@ -44,7 +45,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [MAC_BASE] = LAYOUT_104_ansi(
         KC_ESC,             KC_BRID,  KC_BRIU,  KC_MCTRL, KC_LNPAD, UG_VALD,  UG_VALU,  KC_MPRV,  KC_MPLY,  KC_MNXT,  KC_MUTE,  KC_VOLD,  KC_VOLU,   KC_SNAP,  KC_SIRI,  TD(TD_UG_NEXT_RGB_RESET),
         KC_GRV,   KC_1,     KC_2,     KC_3,     KC_4,     KC_5,     KC_6,     KC_7,     KC_8,     TD(TD_NINE_LPAREN), TD(TD_ZERO_RPAREN), KC_MINS,  KC_EQL,   KC_BSPC,   KC_INS,   KC_HOME,  KC_PGUP,   KC_NUM,   KC_PSLS,  KC_PAST,  KC_PMNS,
-        KC_TAB,   KC_Q,     KC_W,     KC_E,     KC_R,     KC_T,     KC_Y,     KC_U,     KC_I,     KC_O,     KC_P,     TD(TD_LBRC_LCBR),   TD(TD_RBRC_RCBR),   KC_BSLS,   KC_DEL,   KC_END,   KC_PGDN,   KC_P7,    KC_P8,    KC_P9,    KC_PPLS,
+        KC_TAB,   KC_Q,     KC_W,     KC_E,     KC_R,     KC_T,     KC_Y,     KC_U,     KC_I,     KC_O,     KC_P,     TD(TD_LBRC_LCBR),   TD(TD_RBRC_RCBR),   TD(TD_BSLS_PIPE),   KC_DEL,   KC_END,   KC_PGDN,   KC_P7,    KC_P8,    KC_P9,    KC_PPLS,
         KC_CAPS,  KC_A,     KC_S,     KC_D,     KC_F,     KC_G,     KC_H,     KC_J,     KC_K,     KC_L,     TD(TD_SCLN_COLN),  TD(TD_QUOT_DQUO),            KC_ENT,                                   KC_P4,    KC_P5,    KC_P6,
         KC_LSFT,            KC_Z,     KC_X,     KC_C,     KC_V,     KC_B,     KC_N,     KC_M,     KC_COMM,  KC_DOT,   TD(TD_SLSH_QUES),           KC_RSFT,             KC_UP,               KC_P1,    KC_P2,    KC_P3,    KC_PENT,
         KC_LCTL,  KC_LOPTN, KC_LCMMD,                               KC_SPC,                                 KC_RCMMD, KC_ROPTN, FN_MAC,   KC_RCTL,   KC_LEFT,  KC_DOWN,  KC_RGHT,   KC_P0,              KC_PDOT          ),
@@ -67,6 +68,7 @@ tap_dance_action_t tap_dance_actions[] = {
     [TD_NINE_LPAREN] = ACTION_TAP_DANCE_DOUBLE(KC_9, KC_LPRN),
     [TD_ZERO_RPAREN] = ACTION_TAP_DANCE_DOUBLE(KC_0, KC_RPRN),
     [TD_SLSH_QUES] = ACTION_TAP_DANCE_DOUBLE(KC_SLSH, KC_QUES),
+    [TD_BSLS_PIPE] = ACTION_TAP_DANCE_DOUBLE(KC_BSLS, KC_PIPE),
 };
 
 #define POWER_ON_LED_DURATION 3100
@@ -85,7 +87,8 @@ uint16_t get_tapping_term(uint16_t keycode, keyrecord_t *record) {
         case TD(TD_NINE_LPAREN):
         case TD(TD_ZERO_RPAREN):
         case TD(TD_SLSH_QUES):
-            return QUICK_TAP_PERIOD;
+        case TD(TD_BSLS_PIPE):
+            return TAP_DANCE_PERIOD;
         default:
             return TAPPING_TERM;
     }
@@ -93,6 +96,7 @@ uint16_t get_tapping_term(uint16_t keycode, keyrecord_t *record) {
 
 void keyboard_post_init_user(void) {
     power_on_indicator_timer = timer_read32();
+    inactivity_init();
 }
 
 void housekeeping_task_user(void) {
@@ -114,8 +118,11 @@ void housekeeping_task_user(void) {
     }
 
     if (!keyboard_locked) {
-        // check and trigger inactivity-based RGB effect
-        check_rgb_inactivity();
+        // apply inactivity-based RGB effect when timeout is first reached (one-shot)
+        if (on_inactivity_triggered()) {
+            store_rgb_mode(RGB_SAVE_SLOT_INACTIVITY);
+            rgb_matrix_mode_noeeprom(INACTIVITY_RGB_EFFECT);
+        }
     }
 }
 
@@ -131,35 +138,7 @@ void leader_end_user(void) {
         SEND_STRING(SS_LCTL("a") SS_LCTL("c"));
     }
 
-    // --- Quotes (Double Tap) ---
-    else if (leader_sequence_two_keys(KC_QUOTE, KC_QUOTE)) {
-        // ' ' => '' and place cursor inside
-        SEND_STRING("''" SS_TAP(X_LEFT));
-    }
-    else if (leader_sequence_two_keys(KC_DQUO, KC_DQUO)) {
-        // " " => "" and place cursor inside
-        SEND_STRING("\"\"" SS_TAP(X_LEFT));
-    }
-
-    // --- Symmetrical Brackets ---
-    else if (leader_sequence_two_keys(KC_LPRN, KC_LPRN)) {
-        // ( ( => () and place cursor inside
-        SEND_STRING("()" SS_TAP(X_LEFT));
-    }
-    else if (leader_sequence_two_keys(KC_LBRC, KC_LBRC)) {
-        // [ [ => [] and place cursor inside
-        SEND_STRING("[]" SS_TAP(X_LEFT));
-    }
-    else if (leader_sequence_two_keys(KC_LCBR, KC_LCBR)) {
-        // { { => {} and place cursor inside
-        SEND_STRING("{}" SS_TAP(X_LEFT));
-    }
-    else if (leader_sequence_two_keys(KC_LABK, KC_LABK)) {
-        // < < => <> and place cursor inside
-        SEND_STRING("<>" SS_TAP(X_LEFT));
-    }
-
-    // --- Markdown Code Block ---
+    // Markdown
     else if (leader_sequence_two_keys(KC_GRAVE, KC_GRAVE)) {
         // ` ` => Markdown triple backtick code block with cursor in center
         SEND_STRING("```" SS_TAP(X_ENTER) SS_TAP(X_ENTER) "```" SS_TAP(X_UP));
@@ -172,8 +151,10 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         return false;
     }
 
-    // reset inactivity RGB cycle on any key activity
-    reset_rgb_inactivity(true);
+    // reset inactivity timer on any key activity, restore saved RGB mode if inactivity was active
+    if (inactivity_reset()) {
+        restore_rgb_mode(RGB_SAVE_SLOT_INACTIVITY);
+    }
 
     if (!process_record_profiles(keycode, record)) {
         return false;

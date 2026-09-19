@@ -1,11 +1,16 @@
 #pragma once
 
+#include <stdbool.h>
+#include "action.h"
 #include "keycodes.h"
 #include "keychron_common.h"
 
 #include "config.h"
 
-#define QUICK_TAP_PERIOD 100
+#define TAP_DANCE_PERIOD 120
+
+#define INACTIVITY_TIMEOUT_MS 600000  // 10 minutes
+#define INACTIVITY_RGB_EFFECT RGB_MATRIX_CYCLE_LEFT_RIGHT
 
 #define FN_WIN MO(WIN_FN)
 #define FM_WIN MO(WIN_FM)
@@ -33,4 +38,5 @@ enum tap_dances {
     TD_NINE_LPAREN,  // 9 single, ( double
     TD_ZERO_RPAREN,  // 0 single, ) double
     TD_SLSH_QUES,  // / single, ? double
+    TD_BSLS_PIPE,  // \ single, | double
 };
