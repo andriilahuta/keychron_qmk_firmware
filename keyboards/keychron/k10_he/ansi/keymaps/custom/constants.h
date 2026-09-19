@@ -7,7 +7,7 @@
 
 #include "config.h"
 
-#define TAP_DANCE_PERIOD 120
+#define TAP_DANCE_PERIOD 140
 
 #define INACTIVITY_TIMEOUT_MS 600000  // 10 minutes
 #define INACTIVITY_RGB_EFFECT RGB_MATRIX_CYCLE_LEFT_RIGHT

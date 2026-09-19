@@ -21,7 +21,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [WIN_FN] = LAYOUT_104_ansi(
         FN_LOCK,            KC_BRID,  KC_BRIU,  KC_TASK,  KC_FILE,  UG_VALD,  UG_VALU,  KC_MPRV,  KC_MPLY,  KC_MNXT,  KC_MUTE,  KC_VOLD,  KC_VOLU,   KC_CALC,  KC_MYCM,  UG_TOGG,
         _______,  BT_HST1,  BT_HST2,  BT_HST3,  P2P4G,    _______,  _______,  _______,  _______,  KC_9,     KC_0,     _______,  _______,  _______,   _______,  _______,  _______,   _______,  _______,  OS_TOGGL,  _______,
-        UG_TOGG,  UG_NEXT,  UG_VALU,  UG_HUEU,  UG_SATU,  UG_SPDU,  _______,  _______,  _______,  _______,  _______,  KC_LBRC,  KC_RBRC,  _______,   _______,  _______,  _______,   _______,  MS_WHLU,  _______,  _______,
+        UG_TOGG,  UG_NEXT,  UG_VALU,  UG_HUEU,  UG_SATU,  UG_SPDU,  _______,  _______,  _______,  _______,  _______,  KC_LBRC,  KC_RBRC,  KC_BSLS,   _______,  _______,  _______,   _______,  MS_WHLU,  _______,  _______,
         QK_LOCK,  UG_PREV,  UG_VALD,  UG_HUED,  UG_SATD,  UG_SPDD,  _______,  _______,  _______,  _______,  KC_SCLN,  KC_QUOT,            _______,                                  MS_WHLL,  _______,  MS_WHLR,
         _______,            _______,  _______,  _______,  _______,  BAT_LVL,  _______,  _______,  _______,  _______,  KC_SLSH,            _______,             MS_UP,               _______,  MS_WHLD,  _______,  _______,
         _______,  _______,  _______,                                BL_STEP,                                _______,  _______,  _______,  QK_LEAD,   MS_LEFT,  MS_DOWN,  MS_RGHT,   _______,              _______          ),
@@ -94,44 +94,6 @@ uint16_t get_tapping_term(uint16_t keycode, keyrecord_t *record) {
     }
 }
 
-void keyboard_post_init_user(void) {
-    power_on_indicator_timer = timer_read32();
-    inactivity_init();
-}
-
-void housekeeping_task_user(void) {
-    if (power_on_indicator_timer && timer_elapsed32(power_on_indicator_timer) > POWER_ON_LED_DURATION) {
-        power_on_indicator_timer = 0;
-        layer_state_t default_layer = get_highest_layer(default_layer_state);
-        update_mac_led(default_layer);
-        update_win_led(default_layer);
-        if (keyboard_locked) {
-            store_rgb_mode(RGB_SAVE_SLOT_LOCK);
-            rgb_matrix_mode_noeeprom(RGB_MATRIX_CUSTOM_KEYBOARD_LOCKED_EFFECT);
-        }
-    }
-
-    // apply profile's RGB effect after profile switch indication completes
-    if (select_profile_indicator_timer && timer_elapsed32(select_profile_indicator_timer) > POWER_ON_RGB_DURATION) {
-        select_profile_indicator_timer = 0;
-        save_current_rgb_profile();
-    }
-
-    if (!keyboard_locked) {
-        // apply inactivity-based RGB effect when timeout is first reached (one-shot)
-        if (on_inactivity_triggered()) {
-            store_rgb_mode(RGB_SAVE_SLOT_INACTIVITY);
-            rgb_matrix_mode_noeeprom(INACTIVITY_RGB_EFFECT);
-        }
-    }
-}
-
-layer_state_t default_layer_state_set_user(layer_state_t state) {
-    update_mac_led(state);
-    update_win_led(state);
-    return state;
-}
-
 void leader_end_user(void) {
     if (leader_sequence_two_keys(KC_A, KC_A)) {
         // a, a => Ctrl+A, Ctrl+C
@@ -179,6 +141,44 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     }
 
     return true;
+}
+
+void keyboard_post_init_user(void) {
+    power_on_indicator_timer = timer_read32();
+    inactivity_init();
+}
+
+void housekeeping_task_user(void) {
+    if (power_on_indicator_timer && timer_elapsed32(power_on_indicator_timer) > POWER_ON_LED_DURATION) {
+        power_on_indicator_timer = 0;
+        layer_state_t default_layer = get_highest_layer(default_layer_state);
+        update_mac_led(default_layer);
+        update_win_led(default_layer);
+        if (keyboard_locked) {
+            store_rgb_mode(RGB_SAVE_SLOT_LOCK);
+            rgb_matrix_mode_noeeprom(RGB_MATRIX_CUSTOM_KEYBOARD_LOCKED_EFFECT);
+        }
+    }
+
+    // apply profile's RGB effect after profile switch indication completes
+    if (select_profile_indicator_timer && timer_elapsed32(select_profile_indicator_timer) > POWER_ON_RGB_DURATION) {
+        select_profile_indicator_timer = 0;
+        save_current_rgb_profile();
+    }
+
+    if (!keyboard_locked) {
+        // apply inactivity-based RGB effect when timeout is first reached (one-shot)
+        if (on_inactivity_triggered()) {
+            store_rgb_mode(RGB_SAVE_SLOT_INACTIVITY);
+            rgb_matrix_mode_noeeprom(INACTIVITY_RGB_EFFECT);
+        }
+    }
+}
+
+layer_state_t default_layer_state_set_user(layer_state_t state) {
+    update_mac_led(state);
+    update_win_led(state);
+    return state;
 }
 
 bool __wrap_dip_switch_update_kb(uint8_t index, bool active) {
