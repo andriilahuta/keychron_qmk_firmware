@@ -40,3 +40,8 @@ enum tap_dances {
     TD_SLSH_QUES,  // / single, ? double
     TD_BSLS_PIPE,  // \ single, | double
 };
+
+enum combos {
+    RESET_PROFILE_RGB_WIN,
+    RESET_PROFILE_RGB_MAC,
+};

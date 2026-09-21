@@ -11,7 +11,7 @@
 // clang-format off
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [WIN_BASE] = LAYOUT_104_ansi(
-        KC_ESC,             KC_F1,    KC_F2,    KC_F3,    KC_F4,    KC_F5,    KC_F6,    KC_F7,    KC_F8,    KC_F9,    KC_F10,   KC_F11,   KC_F12,   KC_PSCR,  KC_CTANA, TD(TD_UG_NEXT_RGB_RESET),
+        KC_ESC,             KC_F1,    KC_F2,    KC_F3,    KC_F4,    KC_F5,    KC_F6,    KC_F7,    KC_F8,    KC_F9,    KC_F10,   KC_F11,   KC_F12,   KC_PSCR,  KC_CTANA, UG_NEXT,
         KC_GRV,   KC_1,     KC_2,     KC_3,     KC_4,     KC_5,     KC_6,     KC_7,     KC_8,     TD(TD_NINE_LPAREN), TD(TD_ZERO_RPAREN), KC_MINS,  KC_EQL,   KC_BSPC,   KC_INS,   KC_HOME,  KC_PGUP,   KC_NUM,   KC_PSLS,  KC_PAST,  KC_PMNS,
         KC_TAB,   KC_Q,     KC_W,     KC_E,     KC_R,     KC_T,     KC_Y,     KC_U,     KC_I,     KC_O,     KC_P,     TD(TD_LBRC_LCBR),   TD(TD_RBRC_RCBR),   TD(TD_BSLS_PIPE),   KC_DEL,   KC_END,   KC_PGDN,   KC_P7,    KC_P8,    KC_P9,    KC_PPLS,
         KC_CAPS,  KC_A,     KC_S,     KC_D,     KC_F,     KC_G,     KC_H,     KC_J,     KC_K,     KC_L,     TD(TD_SCLN_COLN),  TD(TD_QUOT_DQUO),            KC_ENT,                                   KC_P4,    KC_P5,    KC_P6,
@@ -43,7 +43,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         _______,  _______,  _______,                                BL_STEP,                                _______,  _______,  _______,  QK_LEAD,   MS_LEFT,  MS_DOWN,  MS_RGHT,   _______,              _______          ),
 
     [MAC_BASE] = LAYOUT_104_ansi(
-        KC_ESC,             KC_BRID,  KC_BRIU,  KC_MCTRL, KC_LNPAD, UG_VALD,  UG_VALU,  KC_MPRV,  KC_MPLY,  KC_MNXT,  KC_MUTE,  KC_VOLD,  KC_VOLU,   KC_SNAP,  KC_SIRI,  TD(TD_UG_NEXT_RGB_RESET),
+        KC_ESC,             KC_BRID,  KC_BRIU,  KC_MCTRL, KC_LNPAD, UG_VALD,  UG_VALU,  KC_MPRV,  KC_MPLY,  KC_MNXT,  KC_MUTE,  KC_VOLD,  KC_VOLU,   KC_SNAP,  KC_SIRI,  UG_NEXT,
         KC_GRV,   KC_1,     KC_2,     KC_3,     KC_4,     KC_5,     KC_6,     KC_7,     KC_8,     TD(TD_NINE_LPAREN), TD(TD_ZERO_RPAREN), KC_MINS,  KC_EQL,   KC_BSPC,   KC_INS,   KC_HOME,  KC_PGUP,   KC_NUM,   KC_PSLS,  KC_PAST,  KC_PMNS,
         KC_TAB,   KC_Q,     KC_W,     KC_E,     KC_R,     KC_T,     KC_Y,     KC_U,     KC_I,     KC_O,     KC_P,     TD(TD_LBRC_LCBR),   TD(TD_RBRC_RCBR),   TD(TD_BSLS_PIPE),   KC_DEL,   KC_END,   KC_PGDN,   KC_P7,    KC_P8,    KC_P9,    KC_PPLS,
         KC_CAPS,  KC_A,     KC_S,     KC_D,     KC_F,     KC_G,     KC_H,     KC_J,     KC_K,     KC_L,     TD(TD_SCLN_COLN),  TD(TD_QUOT_DQUO),            KC_ENT,                                   KC_P4,    KC_P5,    KC_P6,
@@ -60,7 +60,6 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 };
 
 tap_dance_action_t tap_dance_actions[] = {
-    [TD_UG_NEXT_RGB_RESET] = ACTION_TAP_DANCE_TAP_HOLD_FN(UG_NEXT, save_current_rgb_profile),
     [TD_SCLN_COLN] = ACTION_TAP_DANCE_DOUBLE(KC_SCLN, KC_COLN),
     [TD_QUOT_DQUO] = ACTION_TAP_DANCE_DOUBLE(KC_QUOT, KC_DQUO),
     [TD_LBRC_LCBR] = ACTION_TAP_DANCE_DOUBLE(KC_LBRC, KC_LCBR),
@@ -69,6 +68,14 @@ tap_dance_action_t tap_dance_actions[] = {
     [TD_ZERO_RPAREN] = ACTION_TAP_DANCE_DOUBLE(KC_0, KC_RPRN),
     [TD_SLSH_QUES] = ACTION_TAP_DANCE_DOUBLE(KC_SLSH, KC_QUES),
     [TD_BSLS_PIPE] = ACTION_TAP_DANCE_DOUBLE(KC_BSLS, KC_PIPE),
+};
+
+const uint16_t PROGMEM reset_profile_rgb_win[] = {FN_WIN, KC_P, UG_NEXT, COMBO_END};
+const uint16_t PROGMEM reset_profile_rgb_mac[] = {FN_MAC, KC_P, UG_NEXT, COMBO_END};
+
+combo_t key_combos[] = {
+    [RESET_PROFILE_RGB_WIN] = COMBO_ACTION(reset_profile_rgb_win),
+    [RESET_PROFILE_RGB_MAC] = COMBO_ACTION(reset_profile_rgb_mac),
 };
 
 #define POWER_ON_LED_DURATION 3100
@@ -104,6 +111,17 @@ void leader_end_user(void) {
     else if (leader_sequence_two_keys(KC_GRAVE, KC_GRAVE)) {
         // ` ` => Markdown triple backtick code block with cursor in center
         SEND_STRING("```" SS_TAP(X_ENTER) SS_TAP(X_ENTER) "```" SS_TAP(X_UP));
+    }
+}
+
+void process_combo_event(uint16_t combo_index, bool pressed) {
+    switch(combo_index) {
+        case RESET_PROFILE_RGB_WIN:
+        case RESET_PROFILE_RGB_MAC:
+            if (pressed) {
+                save_current_rgb_profile();
+            }
+            break;
     }
 }
 
