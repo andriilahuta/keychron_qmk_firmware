@@ -8,8 +8,7 @@ LEADER_ENABLE = yes
 COMBO_ENABLE = yes
 RGB_MATRIX_CUSTOM_USER = yes
 
-SRC += common.c \
-         profiles.c \
+SRC += profiles.c \
          inactivity.c \
          leds.c
 

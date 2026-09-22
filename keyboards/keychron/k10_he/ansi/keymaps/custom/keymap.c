@@ -3,7 +3,6 @@
 #include "profile.h"
 
 #include "constants.h"
-#include "common.h"
 #include "profiles.h"
 #include "leds.h"
 #include "inactivity.h"
