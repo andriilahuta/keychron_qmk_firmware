@@ -41,78 +41,8 @@ const uint16_t PROGMEM default_profiles[PROFILE_COUNT][MATRIX_ROWS][MATRIX_COLS]
         0,       0,       0,                                  0,                                  0,       0,       0,       0,      LS_LEFT, LS_DOWN, LS_RGHT,                 0,          0),
 };
 
-// Process typing profile
-// Mode 1 (Shallow): Sends a single tap sequence (register + unregister).
-// Mode 2 (Deep): Yields control back to QMK for normal OS hold/repeat behavior.
-bool process_record_analog_typing(uint8_t current_profile, uint16_t keycode, keyrecord_t *record) {
-    static bool shallow_fired[MATRIX_ROWS][MATRIX_COLS] = {false};
-
-    uint8_t row = record->event.key.row;
-    uint8_t col = record->event.key.col;
-
-    // only process standard keycodes (0x00-0xFE); skip special keycodes like KC_NO, KC_NOEVENT, etc
-    if (current_profile != PROFILE_TYPING || keycode >= 0xFF) {
-        return true;
-    }
-
-    analog_matrix_profile_t *cur_prof = profile_get_current();
-    if (!cur_prof) {
-        return true; // safety fallback: process normally if profile struct is uninitialized
-    }
-
-    uint8_t current_depth = analog_matrix_get_travel(row, col);
-    analog_key_config_t key_cfg = cur_prof->key_config[row][col];
-
-    // resolve shallow actuation point (fall back to global setting if mode is AKM_GLOBAL)
-    uint8_t threshold_shallow = (key_cfg.mode == AKM_GLOBAL)
-                                 ? cur_prof->global.act_pt
-                                 : key_cfg.act_pt;
-
-    // resolve deep press threshold (mapped to rapid trigger sensitivity field)
-    uint8_t threshold_deep = (key_cfg.mode == AKM_GLOBAL)
-                              ? cur_prof->global.rpd_trig_sen
-                              : key_cfg.rpd_trig_sen;
-    // safeguard: if deep threshold is unassigned, default to safe deep travel (~3.2mm)
-    if (threshold_deep == 0) {
-        threshold_deep = DEFAULT_DEEP_PRESS_THRESHOLD;
-    }
-
-    if (record->event.pressed) {
-        // if switch travels past deep threshold, yield control back to QMK standard engine
-        if (current_depth >= threshold_deep) {
-            return true;
-        }
-
-        // shallow press
-        // fire single tap and set lock state to prevent repeating while hovering
-        if (!shallow_fired[row][col] && current_depth >= threshold_shallow) {
-            register_code16(keycode);
-            unregister_code16(keycode); // immediate unregister prevents OS hold-repeat
-
-            shallow_fired[row][col] = true;
-            return false;
-        }
-
-        // hover state
-        // suppress repeated output after shallow tap while finger remains pressed
-        if (shallow_fired[row][col]) {
-            return false;
-        }
-    } else {
-        // key released: reset shallow lock state for next actuation cycle
-        shallow_fired[row][col] = false;
-        return true;
-    }
-
-    return true;
-}
-
 bool process_record_profiles(uint16_t keycode, keyrecord_t *record) {
     uint8_t current_profile = profile_get_current_index();
-
-    if (!process_record_analog_typing(current_profile, keycode, record)) {
-        return false;
-    }
 
     switch (keycode) {
         case KC_LGUI:
