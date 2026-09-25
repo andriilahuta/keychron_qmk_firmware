@@ -205,7 +205,7 @@ layer_state_t default_layer_state_set_user(layer_state_t state) {
     return state;
 }
 
-bool __wrap_dip_switch_update_kb(uint8_t index, bool active) {
+bool dip_switch_update_user(uint8_t index, bool active) {
     if (index == 0) {
         if (active) {
             // dip switch ON: lock keyboard completely
@@ -220,22 +220,12 @@ bool __wrap_dip_switch_update_kb(uint8_t index, bool active) {
             if (!power_on_indicator_timer) restore_rgb_mode(RGB_SAVE_SLOT_LOCK); // restore normal RGB effect
         }
     }
-
-    dip_switch_update_user(index, active);
-    return true;
+    return false;
 }
 
-extern bool __real_profile_select(uint8_t prof_idx, bool indication);
-
-bool __wrap_profile_select(uint8_t prof_idx, bool indication) {
-    bool success = __real_profile_select(prof_idx, indication);
-
-    // if profile switch was valid, start timer to apply RGB effect after indication completes (~4s)
-    if (success) {
-        select_profile_indicator_timer = timer_read32();
-    }
-
-    return success;
+void on_profile_select(uint8_t prof_idx, bool indication) {
+    // start timer to apply RGB effect after indication completes (~4s)
+    select_profile_indicator_timer = timer_read32();
 }
 
 #ifdef VIA_ENABLE

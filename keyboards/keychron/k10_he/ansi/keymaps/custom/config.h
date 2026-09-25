@@ -1,5 +1,7 @@
 #pragma once
 
+#define FACTORY_TEST_DISABLE_DIP_SWITCH_UPDATE_USER 1;
+
 #define DEVICE_VER 0x0001
 
 #define WIN_BASE_LAYER 0

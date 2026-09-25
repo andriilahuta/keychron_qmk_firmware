@@ -24,10 +24,12 @@ static uint32_t power_on_indicator_timer;
 
 #ifdef DIP_SWITCH_ENABLE
 bool dip_switch_update_kb(uint8_t index, bool active) {
+    if (!dip_switch_update_user(index, active)) {
+        return false;
+    }
     if (index == 0) {
         default_layer_set(1UL << (active ? 0 : 2));
     }
-    dip_switch_update_user(index, active);
 #    if defined(LED_WIN_PIN) && defined(LED_MAC_PIN)
     if (active == 0) {
         gpio_write_pin(LED_WIN_PIN, !LED_OS_PIN_ON_STATE);

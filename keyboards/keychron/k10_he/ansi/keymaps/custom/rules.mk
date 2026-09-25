@@ -11,6 +11,3 @@ RGB_MATRIX_CUSTOM_USER = yes
 SRC += profiles.c \
          inactivity.c \
          leds.c
-
-LDFLAGS += -Wl,--wrap=profile_select \
-		     -Wl,--wrap=dip_switch_update_kb

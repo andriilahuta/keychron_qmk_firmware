@@ -551,6 +551,7 @@ void factory_test_rx(bool usb, uint8_t *data, uint8_t length) {
     }
 }
 
+#ifndef FACTORY_TEST_DISABLE_DIP_SWITCH_UPDATE_USER
 bool dip_switch_update_user(uint8_t index, bool active) {
     if (report_os_sw_state) {
 #ifdef INVERT_OS_SWITCH_STATE
@@ -562,3 +563,4 @@ bool dip_switch_update_user(uint8_t index, bool active) {
 
     return true;
 }
+#endif

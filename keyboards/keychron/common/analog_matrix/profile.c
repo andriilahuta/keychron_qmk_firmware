@@ -150,6 +150,8 @@ uint8_t profile_get_current_index(void) {
     return current_profile_index;
 }
 
+__attribute__((weak)) void on_profile_select(uint8_t prof_idx, bool indication) {}
+
 bool profile_select(uint8_t prof_idx, bool indication) {
     if (prof_idx >= PROFILE_COUNT) return false;
 
@@ -175,6 +177,7 @@ bool profile_select(uint8_t prof_idx, bool indication) {
         prof_ind_state = 0x86;
     }
 
+    on_profile_select(prof_idx, indication);
     return true;
 }
 
