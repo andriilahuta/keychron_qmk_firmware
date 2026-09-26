@@ -71,12 +71,12 @@ tap_dance_action_t tap_dance_actions[] = {
 
 const uint16_t PROGMEM reset_profile_rgb_win[] = {FN_WIN, KC_P, UG_NEXT, COMBO_END};
 const uint16_t PROGMEM reset_profile_rgb_mac[] = {FN_MAC, KC_P, UG_NEXT, COMBO_END};
-const uint16_t PROGMEM select_profile_typing_win[] = {FN_WIN, KC_P, KC_F1, COMBO_END};
-const uint16_t PROGMEM select_profile_gaming_win[] = {FN_WIN, KC_P, KC_F2, COMBO_END};
-const uint16_t PROGMEM select_profile_joystick_win[] = {FN_WIN, KC_P, KC_F3, COMBO_END};
-const uint16_t PROGMEM select_profile_typing_mac[] = {FN_MAC, KC_P, KC_F1, COMBO_END};
-const uint16_t PROGMEM select_profile_gaming_mac[] = {FN_MAC, KC_P, KC_F2, COMBO_END};
-const uint16_t PROGMEM select_profile_joystick_mac[] = {FN_MAC, KC_P, KC_F3, COMBO_END};
+const uint16_t PROGMEM select_profile_typing_win[] = {FN_WIN, KC_P, KC_INS, COMBO_END};
+const uint16_t PROGMEM select_profile_gaming_win[] = {FN_WIN, KC_P, KC_HOME, COMBO_END};
+const uint16_t PROGMEM select_profile_joystick_win[] = {FN_WIN, KC_P, KC_PGUP, COMBO_END};
+const uint16_t PROGMEM select_profile_typing_mac[] = {FN_MAC, KC_P, KC_INS, COMBO_END};
+const uint16_t PROGMEM select_profile_gaming_mac[] = {FN_MAC, KC_P, KC_HOME, COMBO_END};
+const uint16_t PROGMEM select_profile_joystick_mac[] = {FN_MAC, KC_P, KC_PGUP, COMBO_END};
 
 combo_t key_combos[] = {
     [RESET_PROFILE_RGB_WIN] = COMBO_ACTION(reset_profile_rgb_win),
