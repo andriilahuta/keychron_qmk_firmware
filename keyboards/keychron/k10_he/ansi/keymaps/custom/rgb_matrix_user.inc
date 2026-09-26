@@ -163,7 +163,7 @@ static bool PROFILE_GAMING_JOYSTICK_EFFECT(effect_params_t* params) {
 
 
 // Keys cycle through rainbow highlight colors and stay bright while held.
-// After release, the highlight holds for TYPING_HIGHLIGHT_HOLD_MS, then fades to TYPING_COLOR_BACKGROUND.
+// After release, each hit adds TYPING_HIGHLIGHT_HOLD_MS before fading to TYPING_COLOR_BACKGROUND.
 static bool PROFILE_TYPING_EFFECT(effect_params_t* params) {
     RGB_MATRIX_USE_LIMITS(led_min, led_max);
 
@@ -190,18 +190,21 @@ static bool PROFILE_TYPING_EFFECT(effect_params_t* params) {
                 matrix_is_on(matrix_position_by_led[i].matrix_position.row, matrix_position_by_led[i].matrix_position.col);
 
         uint16_t tick = 0xFFFF;
+        uint8_t hit_count = 0;
 
-        // find the most recent hit for this LED
+        // Find the newest hit and count recent hits for this LED.
         for (int8_t j = g_last_hit_tracker.count - 1; j >= 0; j--) {
-            if (g_last_hit_tracker.index[j] == i && g_last_hit_tracker.tick[j] < tick) {
-                tick = g_last_hit_tracker.tick[j];
-                break;
+            if (g_last_hit_tracker.index[j] == i) {
+                hit_count++;
+                if (g_last_hit_tracker.tick[j] < tick) {
+                    tick = g_last_hit_tracker.tick[j];
+                }
             }
         }
 
         if (tick != 0xFFFF || held) {
-            // keep the highlight briefly after release, then fade it away.
-            uint16_t fade_tick = tick > TYPING_HIGHLIGHT_HOLD_MS ? tick - TYPING_HIGHLIGHT_HOLD_MS : 0;
+            uint32_t hold_duration = (uint32_t)TYPING_HIGHLIGHT_HOLD_MS * hit_count;
+            uint16_t fade_tick = tick > hold_duration ? tick - hold_duration : 0;
             uint16_t offset = scale16by8(fade_tick, qadd8(rgb_matrix_config.speed, 1));
 
             // clamp offset to prevent `255 - offset` integer underflow,
