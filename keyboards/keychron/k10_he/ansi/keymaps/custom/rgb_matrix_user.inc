@@ -38,7 +38,7 @@ typedef struct {
 #define KEYBOARD_LOCKED_WAVE_STEP_MS 20
 
 #define TYPING_HIGHLIGHT_HOLD_MS 1000
-#define TYPING_COLOR_BACKGROUND  ((rgb_color_t){ 212, 194, 106 })
+#define TYPING_COLOR_BACKGROUND  ((rgb_color_t){ 225, 194, 86 })
 
 #define GAMING_COLOR_BACKGROUND  ((rgb_color_t){ 255, 255, 0 })
 #define GAMING_COLOR_PRIMARY     ((rgb_color_t){ 255, 0, 0 })
