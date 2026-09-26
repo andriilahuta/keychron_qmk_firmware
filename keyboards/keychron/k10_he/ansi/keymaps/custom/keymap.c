@@ -208,9 +208,8 @@ void keyboard_post_init_user(void) {
 void housekeeping_task_user(void) {
     if (power_on_indicator_timer && timer_elapsed32(power_on_indicator_timer) > POWER_ON_LED_DURATION) {
         power_on_indicator_timer = 0;
-        layer_state_t default_layer = get_highest_layer(default_layer_state);
-        update_mac_led(default_layer);
-        update_win_led(default_layer);
+        update_mac_led(default_layer_state);
+        update_win_led(default_layer_state);
         if (keyboard_locked) {
             store_rgb_mode(RGB_SAVE_SLOT_LOCK);
             rgb_matrix_mode_noeeprom(RGB_MATRIX_CUSTOM_KEYBOARD_LOCKED_EFFECT);
