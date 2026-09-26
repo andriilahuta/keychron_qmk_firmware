@@ -71,10 +71,22 @@ tap_dance_action_t tap_dance_actions[] = {
 
 const uint16_t PROGMEM reset_profile_rgb_win[] = {FN_WIN, KC_P, UG_NEXT, COMBO_END};
 const uint16_t PROGMEM reset_profile_rgb_mac[] = {FN_MAC, KC_P, UG_NEXT, COMBO_END};
+const uint16_t PROGMEM select_profile_typing_win[] = {FN_WIN, KC_P, KC_F1, COMBO_END};
+const uint16_t PROGMEM select_profile_gaming_win[] = {FN_WIN, KC_P, KC_F2, COMBO_END};
+const uint16_t PROGMEM select_profile_joystick_win[] = {FN_WIN, KC_P, KC_F3, COMBO_END};
+const uint16_t PROGMEM select_profile_typing_mac[] = {FN_MAC, KC_P, KC_F1, COMBO_END};
+const uint16_t PROGMEM select_profile_gaming_mac[] = {FN_MAC, KC_P, KC_F2, COMBO_END};
+const uint16_t PROGMEM select_profile_joystick_mac[] = {FN_MAC, KC_P, KC_F3, COMBO_END};
 
 combo_t key_combos[] = {
     [RESET_PROFILE_RGB_WIN] = COMBO_ACTION(reset_profile_rgb_win),
     [RESET_PROFILE_RGB_MAC] = COMBO_ACTION(reset_profile_rgb_mac),
+    [SELECT_PROFILE_TYPING_WIN] = COMBO_ACTION(select_profile_typing_win),
+    [SELECT_PROFILE_GAMING_WIN] = COMBO_ACTION(select_profile_gaming_win),
+    [SELECT_PROFILE_JOYSTICK_WIN] = COMBO_ACTION(select_profile_joystick_win),
+    [SELECT_PROFILE_TYPING_MAC] = COMBO_ACTION(select_profile_typing_mac),
+    [SELECT_PROFILE_GAMING_MAC] = COMBO_ACTION(select_profile_gaming_mac),
+    [SELECT_PROFILE_JOYSTICK_MAC] = COMBO_ACTION(select_profile_joystick_mac),
 };
 
 #define POWER_ON_LED_DURATION 3100
@@ -126,6 +138,27 @@ void process_combo_event(uint16_t combo_index, bool pressed) {
         case RESET_PROFILE_RGB_MAC:
             if (pressed) {
                 save_current_rgb_profile();
+            }
+            break;
+
+        case SELECT_PROFILE_TYPING_WIN:
+        case SELECT_PROFILE_TYPING_MAC:
+            if (pressed) {
+                profile_select(PROFILE_TYPING, true);
+            }
+            break;
+
+        case SELECT_PROFILE_GAMING_WIN:
+        case SELECT_PROFILE_GAMING_MAC:
+            if (pressed) {
+                profile_select(PROFILE_GAMING, true);
+            }
+            break;
+
+        case SELECT_PROFILE_JOYSTICK_WIN:
+        case SELECT_PROFILE_JOYSTICK_MAC:
+            if (pressed) {
+                profile_select(PROFILE_GAMING_JOYSTICK, true);
             }
             break;
     }

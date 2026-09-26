@@ -21,11 +21,6 @@ typedef struct {
 } key_pos_t;
 
 typedef struct {
-    key_pos_t matrix_position;
-    bool has_matrix_key;
-} led_matrix_position_t;
-
-typedef struct {
     uint8_t r, g, b;
 } rgb_color_t;
 
@@ -35,7 +30,15 @@ typedef struct {
     rgb_color_t color;
 } key_group_info;
 
-#define KEYBOARD_LOCKED_WAVE_STEP_MS 20
+typedef struct {
+    key_pos_t matrix_position;
+    bool has_matrix_key;
+    bool was_held;
+    uint32_t release_time;
+} rgb_info_t;
+
+#define KEYBOARD_LOCKED_WAVE_STEP_MS 10
+#define KEYBOARD_LOCKED_WAVE_SECONDARY_COLOR ((rgb_color_t){ 214, 0, 255 })
 
 #define TYPING_HIGHLIGHT_HOLD_MS 1000
 #define TYPING_COLOR_BACKGROUND  ((rgb_color_t){ 225, 194, 86 })
@@ -167,16 +170,17 @@ static bool PROFILE_GAMING_JOYSTICK_EFFECT(effect_params_t* params) {
 static bool PROFILE_TYPING_EFFECT(effect_params_t* params) {
     RGB_MATRIX_USE_LIMITS(led_min, led_max);
 
-    static led_matrix_position_t matrix_position_by_led[RGB_MATRIX_LED_COUNT];
+    static rgb_info_t rgb_info_by_index[RGB_MATRIX_LED_COUNT];
     static bool led_positions_initialized = false;
 
+    // build the LED-to-matrix lookup once for held-key checks
     if (!led_positions_initialized) {
         for (uint8_t row = 0; row < MATRIX_ROWS; row++) {
             for (uint8_t col = 0; col < MATRIX_COLS; col++) {
                 uint8_t led_i;
                 if (rgb_matrix_map_row_column_to_led(row, col, &led_i) > 0 && led_i < RGB_MATRIX_LED_COUNT) {
-                    matrix_position_by_led[led_i].matrix_position = (key_pos_t){ row, col };
-                    matrix_position_by_led[led_i].has_matrix_key = true;
+                    rgb_info_by_index[led_i].matrix_position = (key_pos_t){ row, col };
+                    rgb_info_by_index[led_i].has_matrix_key = true;
                 }
             }
         }
@@ -186,13 +190,22 @@ static bool PROFILE_TYPING_EFFECT(effect_params_t* params) {
     for (uint8_t i = led_min; i < led_max; i++) {
         RGB_MATRIX_TEST_LED_FLAGS();
 
-        bool held = matrix_position_by_led[i].has_matrix_key &&
-                matrix_is_on(matrix_position_by_led[i].matrix_position.row, matrix_position_by_led[i].matrix_position.col);
+        bool held = rgb_info_by_index[i].has_matrix_key &&
+                matrix_is_on(rgb_info_by_index[i].matrix_position.row, rgb_info_by_index[i].matrix_position.col);
+
+        // start the release delay at key-up, even if the key was held longer than that delay
+        if (held) {
+            rgb_info_by_index[i].was_held = true;
+            rgb_info_by_index[i].release_time = 0;
+        } else if (rgb_info_by_index[i].was_held) {
+            rgb_info_by_index[i].release_time = g_rgb_timer ? g_rgb_timer : 1;
+            rgb_info_by_index[i].was_held = false;
+        }
 
         uint16_t tick = 0xFFFF;
         uint8_t hit_count = 0;
 
-        // Find the newest hit and count recent hits for this LED.
+        // find the newest hit age and count hits to extend the hold proportionally
         for (int8_t j = g_last_hit_tracker.count - 1; j >= 0; j--) {
             if (g_last_hit_tracker.index[j] == i) {
                 hit_count++;
@@ -202,12 +215,23 @@ static bool PROFILE_TYPING_EFFECT(effect_params_t* params) {
             }
         }
 
-        if (tick != 0xFFFF || held) {
-            uint32_t hold_duration = (uint32_t)TYPING_HIGHLIGHT_HOLD_MS * hit_count;
-            uint16_t fade_tick = tick > hold_duration ? tick - hold_duration : 0;
-            uint16_t offset = scale16by8(fade_tick, qadd8(rgb_matrix_config.speed, 1));
+        if (tick != 0xFFFF || held || rgb_info_by_index[i].release_time != 0) {
+            // use release age when it is newer than the original hit age
+            uint32_t fade_age = tick;
+            if (rgb_info_by_index[i].release_time != 0 &&
+                g_rgb_timer - rgb_info_by_index[i].release_time < fade_age) {
+                fade_age = g_rgb_timer - rgb_info_by_index[i].release_time;
+            }
+            // each recent hit adds one hold interval; retain one interval if old hits expired
+            uint32_t hold_duration = (uint32_t)TYPING_HIGHLIGHT_HOLD_MS * (hit_count ? hit_count : 1);
+            fade_age = fade_age > hold_duration ? fade_age - hold_duration : 0;
+            // scale16by8 accepts a 16-bit age
+            if (fade_age > UINT16_MAX) {
+                fade_age = UINT16_MAX;
+            }
+            uint16_t offset = scale16by8((uint16_t)fade_age, qadd8(rgb_matrix_config.speed, 1));
 
-            // clamp offset to prevent `255 - offset` integer underflow,
+            // clamp offset to prevent `255 - offset` integer underflow
             if (offset > 255) {
                 offset = 255;
             }
@@ -227,15 +251,21 @@ static bool PROFILE_TYPING_EFFECT(effect_params_t* params) {
     return rgb_matrix_check_finished_leds(led_max);
 }
 
-// Slow traveling red brightness wave
+// Traveling red wave with a secondary color filling the troughs.
 static bool KEYBOARD_LOCKED_EFFECT(effect_params_t* params) {
     RGB_MATRIX_USE_LIMITS(led_min, led_max);
 
     for (uint8_t i = led_min; i < led_max; i++) {
         RGB_MATRIX_TEST_LED_FLAGS();
         uint8_t phase = g_rgb_timer / KEYBOARD_LOCKED_WAVE_STEP_MS + g_led_config.point[i].x + g_led_config.point[i].y * 2;
-        uint8_t brightness = 96 + scale8(sin8(phase), 80);
-        RGB rgb = hsv_to_rgb((HSV){0, 255, brightness});
+        uint8_t wave = sin8(phase);
+        uint8_t brightness = 96 + scale8(wave, 80);
+        RGB red = hsv_to_rgb((HSV){0, 255, brightness});
+        RGB rgb = {
+            lerp8by8(KEYBOARD_LOCKED_WAVE_SECONDARY_COLOR.r, red.r, wave),
+            lerp8by8(KEYBOARD_LOCKED_WAVE_SECONDARY_COLOR.g, red.g, wave),
+            lerp8by8(KEYBOARD_LOCKED_WAVE_SECONDARY_COLOR.b, red.b, wave),
+        };
         rgb_matrix_set_color(i, rgb.r, rgb.g, rgb.b);
     }
 
