@@ -8,12 +8,12 @@ extern void rgb_matrix_mode_eeprom_helper(uint8_t mode, bool write_to_eeprom);
 
 void update_mac_led(layer_state_t default_state) {
     uint8_t base_layer = get_highest_layer(default_state);
-    gpio_write_pin(LED_MAC_PIN, (base_layer == MAC_BASE) ? LED_OS_PIN_ON_STATE : !LED_OS_PIN_ON_STATE);
+    gpio_write_pin(LED_WIN_PIN, (base_layer == MAC_BASE) ? LED_OS_PIN_ON_STATE : !LED_OS_PIN_ON_STATE);
 }
 
 void update_win_led(layer_state_t default_state) {
     uint8_t base_layer = get_highest_layer(default_state);
-    gpio_write_pin(LED_WIN_PIN, (base_layer == WIN_FN_LOCK) ? LED_OS_PIN_ON_STATE : !LED_OS_PIN_ON_STATE);
+    gpio_write_pin(LED_MAC_PIN, (base_layer == WIN_FN_LOCK) ? LED_OS_PIN_ON_STATE : !LED_OS_PIN_ON_STATE);
 }
 
 void apply_rgb_profile(uint8_t profile, bool write_to_eeprom) {

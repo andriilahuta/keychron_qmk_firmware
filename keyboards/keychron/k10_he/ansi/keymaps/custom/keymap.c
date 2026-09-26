@@ -78,7 +78,7 @@ combo_t key_combos[] = {
 };
 
 #define POWER_ON_LED_DURATION 3100
-#define POWER_ON_RGB_DURATION 4500
+#define SELECT_PROFILE_RGB_EFFECT_DURATION 1000
 
 static uint32_t power_on_indicator_timer;
 static uint32_t select_profile_indicator_timer;
@@ -185,7 +185,7 @@ void housekeeping_task_user(void) {
     }
 
     // apply profile's RGB effect after profile switch indication completes
-    if (select_profile_indicator_timer && timer_elapsed32(select_profile_indicator_timer) > POWER_ON_RGB_DURATION) {
+    if (select_profile_indicator_timer && timer_elapsed32(select_profile_indicator_timer) > SELECT_PROFILE_RGB_EFFECT_DURATION) {
         select_profile_indicator_timer = 0;
         save_current_rgb_profile();
     }

@@ -5,7 +5,6 @@
 #include "constants.h"
 #include "profiles.h"
 
-#define DEFAULT_DEEP_PRESS_THRESHOLD 32
 #define GAMING_LGUI_MAP_TO KC_LALT
 
 uint8_t profile_gobal_mode[PROFILE_COUNT] = {
