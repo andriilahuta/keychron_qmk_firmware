@@ -109,6 +109,7 @@
 
 void analog_matrix_init(void);
 void analog_matrix_eeconfig_init(void);
+bool analog_matrix_gamepad_allowed(void);
 bool update_raw_value(uint8_t row, uint8_t col, uint16_t value);
 void update_travel_configs(void);
 void update_key_config(uint8_t row, uint8_t col);

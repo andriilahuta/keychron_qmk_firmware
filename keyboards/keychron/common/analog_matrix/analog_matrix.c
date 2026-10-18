@@ -668,6 +668,10 @@ void analog_matrix_init(void) {
         matrix_scan();
 }
 
+__attribute__((weak)) bool analog_matrix_gamepad_allowed(void) {
+    return true;
+}
+
 bool update_raw_value(uint8_t row, uint8_t col, uint16_t value) {
     if (value < VALID_ANALOG_RAW_VALUE_MIN || value > VALID_ANALOG_RAW_VALUE_MAX) return false;
 
@@ -700,6 +704,7 @@ bool update_raw_value(uint8_t row, uint8_t col, uint16_t value) {
             ret = okmc_action(k);
             break;
         case AKM_GAMEPAD:
+            if (!analog_matrix_gamepad_allowed()) break;
 #if defined(XINPUT_ENABLE)
 #    if defined(JOYSTICK_ENABLE)
             if (game_controller_xinput_enabled())

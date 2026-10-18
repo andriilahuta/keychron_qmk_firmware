@@ -1,6 +1,6 @@
 #pragma once
 
-#define FACTORY_TEST_DISABLE_DIP_SWITCH_UPDATE_USER 1;
+#define FACTORY_TEST_DISABLE_DIP_SWITCH_UPDATE_USER 1
 
 #define DEVICE_VER 0x0001
 
@@ -16,8 +16,13 @@
 #define BOTH_SHIFTS_TURNS_ON_CAPS_WORD
 #define CAPS_WORD_INVERT_ON_SHIFT
 
+#define COMBO_ONLY_FROM_LAYER 0  // match combo keys against layer 0, so combos work from every layer
+#define COMBO_MUST_HOLD_PER_COMBO
+#define COMBO_HOLD_TERM 150
+
 #define LEADER_PER_KEY_TIMING
 #define LEADER_TIMEOUT 300
 
-#define RGBLIGHT_DEFAULT_VAL 200  // brightness, max 255
+#define RGB_MATRIX_DEFAULT_VAL 200  // brightness, max 255, applied on EEPROM reset
 #define RGB_MATRIX_TYPING_HEATMAP_DECREASE_DELAY_MS 200
+#define RGB_MATRIX_DEFAULT_MODE RGB_MATRIX_CUSTOM_PROFILE_TYPING_EFFECT  // EEPROM reset selects the typing profile, so start with its effect

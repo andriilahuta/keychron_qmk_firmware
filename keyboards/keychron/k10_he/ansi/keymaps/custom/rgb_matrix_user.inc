@@ -13,7 +13,7 @@ RGB_MATRIX_EFFECT(KEYBOARD_LOCKED_EFFECT)
 #include "matrix.h"
 #include "profiles.h"
 
-extern uint16_t default_profiles[PROFILE_COUNT][MATRIX_ROWS][MATRIX_COLS];
+extern const uint16_t default_profiles[PROFILE_COUNT][MATRIX_ROWS][MATRIX_COLS];
 
 typedef struct {
     uint8_t row;
@@ -48,6 +48,12 @@ typedef struct {
 #define GAMING_COLOR_SECONDARY   ((rgb_color_t){ 0, 255, 255 })
 #define GAMING_COLOR_ACCENT      ((rgb_color_t){ 230, 18, 230 })
 #define JOYSTICK_HIGHLIGHT_COLOR ((rgb_color_t){ 255, 86, 0 })
+
+// Scale by the global brightness so UG_VALU/UG_VALD also affect the custom effects.
+static inline void set_color_scaled(uint8_t i, uint8_t r, uint8_t g, uint8_t b) {
+    uint8_t v = rgb_matrix_config.hsv.v;
+    rgb_matrix_set_color(i, scale8(r, v), scale8(g, v), scale8(b, v));
+}
 
 #define KEY(row, col)  { (row), (col) }
 #define KEY_GROUP(grp_color, ...) \
@@ -102,7 +108,7 @@ static inline void apply_gaming_palette(effect_params_t* params, uint8_t led_min
     // set background
     for (uint8_t i = led_min; i < led_max; i++) {
         RGB_MATRIX_TEST_LED_FLAGS(); // Respect disabled or indicator LEDs
-        rgb_matrix_set_color(i, GAMING_COLOR_BACKGROUND.r, GAMING_COLOR_BACKGROUND.g, GAMING_COLOR_BACKGROUND.b);
+        set_color_scaled(i, GAMING_COLOR_BACKGROUND.r, GAMING_COLOR_BACKGROUND.g, GAMING_COLOR_BACKGROUND.b);
     }
 
     // set key groups
@@ -115,7 +121,7 @@ static inline void apply_gaming_palette(effect_params_t* params, uint8_t led_min
                     gaming_groups[g].keys[j].col, &led_i) > 0) {
                 // only update LEDs assigned to the current processing chunk
                 if (led_i >= led_min && led_i < led_max) {
-                    rgb_matrix_set_color(led_i, c->r, c->g, c->b);
+                    set_color_scaled(led_i, c->r, c->g, c->b);
                 }
             }
         }
@@ -157,7 +163,7 @@ static bool PROFILE_GAMING_JOYSTICK_EFFECT(effect_params_t* params) {
     for (uint8_t i = 0; i < joystick_leds_count; i++) {
         uint8_t led_i = joystick_leds_cache[i];
         if (led_i >= led_min && led_i < led_max) {
-            rgb_matrix_set_color(led_i, JOYSTICK_HIGHLIGHT_COLOR.r, JOYSTICK_HIGHLIGHT_COLOR.g, JOYSTICK_HIGHLIGHT_COLOR.b);
+            set_color_scaled(led_i, JOYSTICK_HIGHLIGHT_COLOR.r, JOYSTICK_HIGHLIGHT_COLOR.g, JOYSTICK_HIGHLIGHT_COLOR.b);
         }
     }
 
@@ -239,13 +245,13 @@ static bool PROFILE_TYPING_EFFECT(effect_params_t* params) {
             uint8_t brightness = held ? 255 : 255 - offset;
             HSV hsv = {(uint8_t)(210 + g_rgb_timer / 50), 255, 255};
             RGB rgb = hsv_to_rgb(hsv);
-            rgb_matrix_set_color(
+            set_color_scaled(
                 i,
                 lerp8by8(TYPING_COLOR_BACKGROUND.r, rgb.r, brightness),
                 lerp8by8(TYPING_COLOR_BACKGROUND.g, rgb.g, brightness),
                 lerp8by8(TYPING_COLOR_BACKGROUND.b, rgb.b, brightness));
         } else {
-            rgb_matrix_set_color(i, TYPING_COLOR_BACKGROUND.r, TYPING_COLOR_BACKGROUND.g, TYPING_COLOR_BACKGROUND.b);
+            set_color_scaled(i, TYPING_COLOR_BACKGROUND.r, TYPING_COLOR_BACKGROUND.g, TYPING_COLOR_BACKGROUND.b);
         }
     }
     return rgb_matrix_check_finished_leds(led_max);
@@ -266,7 +272,7 @@ static bool KEYBOARD_LOCKED_EFFECT(effect_params_t* params) {
             lerp8by8(KEYBOARD_LOCKED_WAVE_SECONDARY_COLOR.g, red.g, wave),
             lerp8by8(KEYBOARD_LOCKED_WAVE_SECONDARY_COLOR.b, red.b, wave),
         };
-        rgb_matrix_set_color(i, rgb.r, rgb.g, rgb.b);
+        set_color_scaled(i, rgb.r, rgb.g, rgb.b);
     }
 
     return rgb_matrix_check_finished_leds(led_max);

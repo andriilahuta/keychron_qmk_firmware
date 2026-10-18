@@ -1,6 +1,8 @@
 #include QMK_KEYBOARD_H
 #include "keychron_common.h"
 #include "profile.h"
+#include "analog_matrix.h"
+#include "game_controller_common.h"
 
 #include "constants.h"
 #include "profiles.h"
@@ -69,24 +71,17 @@ tap_dance_action_t tap_dance_actions[] = {
     [TD_BSLS_PIPE] = ACTION_TAP_DANCE_DOUBLE(KC_BSLS, KC_PIPE),
 };
 
-const uint16_t PROGMEM reset_profile_rgb_win[] = {FN_WIN, KC_P, UG_NEXT, COMBO_END};
-const uint16_t PROGMEM reset_profile_rgb_mac[] = {FN_MAC, KC_P, UG_NEXT, COMBO_END};
-const uint16_t PROGMEM select_profile_typing_win[] = {FN_WIN, KC_P, KC_INS, COMBO_END};
-const uint16_t PROGMEM select_profile_gaming_win[] = {FN_WIN, KC_P, KC_HOME, COMBO_END};
-const uint16_t PROGMEM select_profile_joystick_win[] = {FN_WIN, KC_P, KC_PGUP, COMBO_END};
-const uint16_t PROGMEM select_profile_typing_mac[] = {FN_MAC, KC_P, KC_INS, COMBO_END};
-const uint16_t PROGMEM select_profile_gaming_mac[] = {FN_MAC, KC_P, KC_HOME, COMBO_END};
-const uint16_t PROGMEM select_profile_joystick_mac[] = {FN_MAC, KC_P, KC_PGUP, COMBO_END};
+// combo keys are read from layer 0 (COMBO_ONLY_FROM_LAYER), so these also match on Mac and in FN lock
+const uint16_t PROGMEM reset_profile_rgb[] = {FN_WIN, KC_P, UG_NEXT, COMBO_END};
+const uint16_t PROGMEM select_profile_typing[] = {FN_WIN, KC_P, KC_INS, COMBO_END};
+const uint16_t PROGMEM select_profile_gaming[] = {FN_WIN, KC_P, KC_HOME, COMBO_END};
+const uint16_t PROGMEM select_profile_joystick[] = {FN_WIN, KC_P, KC_PGUP, COMBO_END};
 
 combo_t key_combos[] = {
-    [RESET_PROFILE_RGB_WIN] = COMBO_ACTION(reset_profile_rgb_win),
-    [RESET_PROFILE_RGB_MAC] = COMBO_ACTION(reset_profile_rgb_mac),
-    [SELECT_PROFILE_TYPING_WIN] = COMBO_ACTION(select_profile_typing_win),
-    [SELECT_PROFILE_GAMING_WIN] = COMBO_ACTION(select_profile_gaming_win),
-    [SELECT_PROFILE_JOYSTICK_WIN] = COMBO_ACTION(select_profile_joystick_win),
-    [SELECT_PROFILE_TYPING_MAC] = COMBO_ACTION(select_profile_typing_mac),
-    [SELECT_PROFILE_GAMING_MAC] = COMBO_ACTION(select_profile_gaming_mac),
-    [SELECT_PROFILE_JOYSTICK_MAC] = COMBO_ACTION(select_profile_joystick_mac),
+    [RESET_PROFILE_RGB] = COMBO_ACTION(reset_profile_rgb),
+    [SELECT_PROFILE_TYPING] = COMBO_ACTION(select_profile_typing),
+    [SELECT_PROFILE_GAMING] = COMBO_ACTION(select_profile_gaming),
+    [SELECT_PROFILE_JOYSTICK] = COMBO_ACTION(select_profile_joystick),
 };
 
 #define POWER_ON_LED_DURATION 3100
@@ -112,6 +107,44 @@ uint16_t get_tapping_term(uint16_t keycode, keyrecord_t *record) {
     }
 }
 
+// Combos fire only when held, so fast key rolls type normally.
+bool get_combo_must_hold(uint16_t index, combo_t *combo) {
+    return true;
+}
+
+void process_combo_event(uint16_t combo_index, bool pressed) {
+    // combo actions are dispatched outside process_record_user, so check the lock here too
+    if (keyboard_locked) {
+        return;
+    }
+
+    switch(combo_index) {
+        case RESET_PROFILE_RGB:
+            if (pressed) {
+                save_current_rgb_profile();
+            }
+            break;
+
+        case SELECT_PROFILE_TYPING:
+            if (pressed) {
+                profile_select(PROFILE_TYPING, true);
+            }
+            break;
+
+        case SELECT_PROFILE_GAMING:
+            if (pressed) {
+                profile_select(PROFILE_GAMING, true);
+            }
+            break;
+
+        case SELECT_PROFILE_JOYSTICK:
+            if (pressed) {
+                profile_select(PROFILE_GAMING_JOYSTICK, true);
+            }
+            break;
+    }
+}
+
 void leader_end_user(void) {
     if (leader_sequence_two_keys(KC_A, KC_A)) {
         // Select all and copy
@@ -120,8 +153,8 @@ void leader_end_user(void) {
     }
     else if (leader_sequence_two_keys(KC_DEL, KC_DEL) || leader_sequence_two_keys(KC_PDOT, KC_PDOT)) {
         // Delete the entire line
-        // del del => Home -> Shift+End -> Backspace -> Backspace (removes line break)
-        SEND_STRING(SS_TAP(X_HOME) SS_LSFT(SS_TAP(X_END)) SS_TAP(X_BSPC) SS_TAP(X_BSPC));
+        // del del => End -> Shift+Home x2 (past smart-Home indent) -> Shift+Left (previous line break) -> Backspace
+        SEND_STRING(SS_TAP(X_END) SS_LSFT(SS_TAP(X_HOME) SS_TAP(X_HOME) SS_TAP(X_LEFT)) SS_TAP(X_BSPC));
     }
 
     // Markdown
@@ -132,47 +165,15 @@ void leader_end_user(void) {
     }
 }
 
-void process_combo_event(uint16_t combo_index, bool pressed) {
-    switch(combo_index) {
-        case RESET_PROFILE_RGB_WIN:
-        case RESET_PROFILE_RGB_MAC:
-            if (pressed) {
-                save_current_rgb_profile();
-            }
-            break;
-
-        case SELECT_PROFILE_TYPING_WIN:
-        case SELECT_PROFILE_TYPING_MAC:
-            if (pressed) {
-                profile_select(PROFILE_TYPING, true);
-            }
-            break;
-
-        case SELECT_PROFILE_GAMING_WIN:
-        case SELECT_PROFILE_GAMING_MAC:
-            if (pressed) {
-                profile_select(PROFILE_GAMING, true);
-            }
-            break;
-
-        case SELECT_PROFILE_JOYSTICK_WIN:
-        case SELECT_PROFILE_JOYSTICK_MAC:
-            if (pressed) {
-                profile_select(PROFILE_GAMING_JOYSTICK, true);
-            }
-            break;
-    }
-}
-
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     // block ALL input when dip switch has locked the keyboard
     if (keyboard_locked) {
         return false;
     }
 
-    // reset inactivity timer on any key activity, restore saved RGB mode if inactivity was active
+    // reset inactivity timer on any key activity, end the inactivity RGB effect if it was active
     if (inactivity_reset()) {
-        restore_rgb_mode(RGB_SAVE_SLOT_INACTIVITY);
+        rgb_override_set(RGB_OVERRIDE_INACTIVITY, false);
     }
 
     if (!process_record_profiles(keycode, record)) {
@@ -210,10 +211,6 @@ void housekeeping_task_user(void) {
         power_on_indicator_timer = 0;
         update_mac_led(default_layer_state);
         update_win_led(default_layer_state);
-        if (keyboard_locked) {
-            store_rgb_mode(RGB_SAVE_SLOT_LOCK);
-            rgb_matrix_mode_noeeprom(RGB_MATRIX_CUSTOM_KEYBOARD_LOCKED_EFFECT);
-        }
     }
 
     // apply profile's RGB effect after profile switch indication completes
@@ -225,8 +222,7 @@ void housekeeping_task_user(void) {
     if (!keyboard_locked) {
         // apply inactivity-based RGB effect when timeout is first reached (one-shot)
         if (on_inactivity_triggered()) {
-            store_rgb_mode(RGB_SAVE_SLOT_INACTIVITY);
-            rgb_matrix_mode_noeeprom(INACTIVITY_RGB_EFFECT);
+            rgb_override_set(RGB_OVERRIDE_INACTIVITY, true);
         }
     }
 }
@@ -237,26 +233,41 @@ layer_state_t default_layer_state_set_user(layer_state_t state) {
     return state;
 }
 
+// Called on every switch change, and again with the unchanged state at boot and on each wake-up.
 bool dip_switch_update_user(uint8_t index, bool active) {
     if (index == 0) {
-        if (active) {
-            // dip switch ON: lock keyboard completely
-            keyboard_locked = true;
-            if (!power_on_indicator_timer) {
-                store_rgb_mode(RGB_SAVE_SLOT_LOCK);
-                rgb_matrix_mode_noeeprom(RGB_MATRIX_CUSTOM_KEYBOARD_LOCKED_EFFECT);
+        if (active && !keyboard_locked) {
+            // dip switch ON: release everything still held, since key-ups are blocked while locked
+            clear_keyboard();
+            layer_clear();
+            game_controller_clear();
+        } else if (!active && keyboard_locked) {
+            // dip switch OFF: count unlocking as activity so the inactivity effect doesn't start right away
+            if (inactivity_reset()) {
+                rgb_override_set(RGB_OVERRIDE_INACTIVITY, false);
             }
-        } else {
-            // dip switch OFF: unlock and restore normal operation
-            keyboard_locked = false;
-            if (!power_on_indicator_timer) restore_rgb_mode(RGB_SAVE_SLOT_LOCK); // restore normal RGB effect
+        }
+
+        keyboard_locked = active;
+        rgb_override_set(RGB_OVERRIDE_LOCK, active);
+
+        // suspend turns the OS LEDs off and the switch is re-read on wake-up, so restore them here
+        // (unless the power-on indicator is still showing; housekeeping updates them when it ends)
+        if (!power_on_indicator_timer) {
+            update_mac_led(default_layer_state);
+            update_win_led(default_layer_state);
         }
     }
     return false;
 }
 
+// gamepad-mode keys bypass process_record_user, so the lock has to block them here
+bool analog_matrix_gamepad_allowed(void) {
+    return !keyboard_locked;
+}
+
 void on_profile_select(uint8_t prof_idx, bool indication) {
-    // start timer to apply RGB effect after indication completes (~4s)
+    // start timer to apply RGB effect after indication completes (~1s)
     select_profile_indicator_timer = timer_read32();
 }
 

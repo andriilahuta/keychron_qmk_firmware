@@ -3,12 +3,12 @@
 #include "action_layer.h"
 #include "analog_matrix/profile.h"
 
-// Identifiers for sub-systems that override RGB modes
+// Sub-systems that temporarily override the RGB mode
 typedef enum {
-    RGB_SAVE_SLOT_INACTIVITY,
-    RGB_SAVE_SLOT_LOCK,
-    RGB_SAVE_SLOT_COUNT  // total number of slots
-} rgb_save_slot_t;
+    RGB_OVERRIDE_LOCK,
+    RGB_OVERRIDE_INACTIVITY,
+    RGB_OVERRIDE_COUNT  // total number of overrides
+} rgb_override_t;
 
 void update_mac_led(layer_state_t default_state);
 
@@ -24,7 +24,5 @@ static inline void save_current_rgb_profile(void) {
     apply_rgb_profile(profile_get_current_index(), true);
 }
 
-void store_rgb_mode(rgb_save_slot_t slot);
-
-void restore_rgb_mode(rgb_save_slot_t slot);
-
+// Turn an override on or off. Repeated calls with the same state are no-ops.
+void rgb_override_set(rgb_override_t override, bool active);
